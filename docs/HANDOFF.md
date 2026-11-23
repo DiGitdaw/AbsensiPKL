@@ -8,8 +8,8 @@ Terakhir diperbarui: 22 November 2026.
 - Password lama yang tersimpan apa adanya tetap bisa dipakai. Password baru (tambah siswa, ubah password) disimpan sebagai hash bcrypt lewat `password_cocok()` dan `password_siap_simpan()` di `config/database.php`.
 
 ## Git
-- `upstream` = repository sumber awal proyek ini (berlisensi MIT), hanya untuk melihat update, bukan tujuan push.
-- `origin` = repo GitHub sendiri, diisi setelah repo baru dibuat.
+- `origin` = https://github.com/FatahSahaja/AbsensiPKL.git. Push/pull harian memakai remote ini.
+- Remote lama sudah dihapus. Riwayat 8 commit dari sumber awal tetap ada di Git sebagai catatan asal kode (MIT) dan tidak dihapus.
 - `.gitignore` menahan `/uploads/bukti/`, `/uploads/profile/`, `/uploads/siswa/` dan file sementara.
 - 37 foto contoh lama sudah dihapus; yang tersisa hanya foto admin dan 3 bukti absensi yang masih dirujuk database.
 
