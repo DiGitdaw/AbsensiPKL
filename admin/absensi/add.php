@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $success = true;
 
         if ($success) {
-            header("Location: detail.php?id=$new_id&created=true");
+            header("Location: detail.php?id=$absensi_id&created=true");
             exit();
         }
     } catch (Exception $e) {
