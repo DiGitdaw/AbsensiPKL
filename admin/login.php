@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute(['id1' => $identifier, 'id2' => $identifier]);
         $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($admin && $password === $admin['password']) {
+        if ($admin && password_cocok($password, $admin['password'])) {
             // Set session variables
             $_SESSION['admin_id'] = $admin['id'];
             $_SESSION['admin_username'] = $admin['username'];

@@ -119,9 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
             $stmt->execute(['id' => $_SESSION['siswa_id']]);
             $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // For this simplified version, we're comparing passwords directly
-            // In a real application, you should use password_verify with hashed passwords
-            if ($data && $data['password'] === $current_password) {
+            // Cocokkan dengan hash baru maupun password lama yang masih tersimpan apa adanya
+            if ($data && password_cocok($current_password, $data['password'])) {
                 // Start transaction before updating
                 $conn->beginTransaction();
 
@@ -129,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
                 $sql = "UPDATE siswa SET password = :password WHERE id = :id";
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([
-                    'password' => $new_password,
+                    'password' => password_siap_simpan($new_password),
                     'id' => $_SESSION['siswa_id']
                 ]);
 

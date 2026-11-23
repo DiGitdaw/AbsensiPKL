@@ -93,6 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Start transaction
+        $password_hash = password_siap_simpan($password);
         $conn->beginTransaction();
 
         // Handle profile photo upload
@@ -144,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'no_hp' => null,
                     'pkl_mulai' => $pkl_mulai !== '' ? $pkl_mulai : null,
                     'pkl_selesai' => $pkl_selesai !== '' ? $pkl_selesai : null,
-                    'password' => $password,
+                    'password' => $password_hash,
                     'foto_profil' => 'assets/default/photo-profile.png'
                 ]);
             }
@@ -160,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'no_hp' => $no_hp !== '' ? $no_hp : null,
                 'pkl_mulai' => $pkl_mulai !== '' ? $pkl_mulai : null,
                 'pkl_selesai' => $pkl_selesai !== '' ? $pkl_selesai : null,
-                'password' => $password,
+                'password' => $password_hash,
                 'foto_profil' => $foto_profil
             ]);
             $student_id = $conn->lastInsertId();

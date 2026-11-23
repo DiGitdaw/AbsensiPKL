@@ -42,6 +42,25 @@ function app_logo($prefix = '', $class = 'h-8 w-auto')
     return '<span class="' . $class . ' inline-flex items-center justify-center rounded bg-blue-600 px-2 text-[10px] font-bold tracking-wide">' . APP_SHORT_NAME . '</span>';
 }
 
+// Password: data lama tersimpan apa adanya, data baru memakai hash bcrypt
+function password_cocok($input, $tersimpan)
+{
+    if (!is_string($tersimpan) || $tersimpan === '') {
+        return false;
+    }
+
+    if (strpos($tersimpan, '$2y$') === 0 || strpos($tersimpan, '$2a$') === 0 || strpos($tersimpan, '$2b$') === 0) {
+        return password_verify((string)$input, $tersimpan);
+    }
+
+    return hash_equals($tersimpan, (string)$input);
+}
+
+function password_siap_simpan($input)
+{
+    return password_hash((string)$input, PASSWORD_DEFAULT);
+}
+
 // Jurusan suggestions: the base template plus values already used in the database
 function jurusan_options($conn)
 {

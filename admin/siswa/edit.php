@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $no_hp = trim($_POST['no_hp'] ?? '');
         $pkl_mulai = $_POST['pkl_mulai'] ?? '';
         $pkl_selesai = $_POST['pkl_selesai'] ?? '';
-        $password = !empty($_POST['password']) ? $_POST['password'] : $siswa['password'];
+        $password = !empty($_POST['password']) ? password_siap_simpan($_POST['password']) : $siswa['password'];
 
         if (!in_array($jenis, ['smk', 'mahasiswa'], true)) {
             $jenis = 'smk';

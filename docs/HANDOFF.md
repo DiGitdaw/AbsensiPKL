@@ -5,6 +5,13 @@ Terakhir diperbarui: 22 November 2026.
 ## Login
 - Admin: nama/username + password. Nama diingat lewat cookie, login balik cukup password. Ada taut "Ganti".
 - Siswa: Nama Lengkap / No HP + password. Nama cocok tanpa spasi dan tanpa peduli huruf besar.
+- Password lama yang tersimpan apa adanya tetap bisa dipakai. Password baru (tambah siswa, ubah password) disimpan sebagai hash bcrypt lewat `password_cocok()` dan `password_siap_simpan()` di `config/database.php`.
+
+## Git
+- `upstream` = repo asli `faiz-hidayat/Web-Absensi` (hanya untuk melihat update, bukan tujuan push).
+- `origin` = repo GitHub sendiri, diisi setelah repo baru dibuat.
+- `.gitignore` menahan `/uploads/bukti/`, `/uploads/profile/`, `/uploads/siswa/` dan file sementara.
+- 37 foto contoh lama sudah dihapus; yang tersisa hanya foto admin dan 3 bukti absensi yang masih dirujuk database.
 
 ## Tema
 - Terang ala dgip.go.id: putih, biru `#2E77BC`, kuning emas, navy `#1F2A44`.

@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($siswa) {
             // Verify the password (in a real app, use password_verify with hashed passwords)
-            if ($password === $siswa['password']) {
+            if (password_cocok($password, $siswa['password'])) {
                 // Set session variables
                 $_SESSION['siswa_id'] = $siswa['id'];
                 $_SESSION['siswa_nis'] = $siswa['nis'] ?? '';
