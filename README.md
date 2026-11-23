@@ -1,145 +1,98 @@
-# 📊 Sistem Informasi Absensi Siswa
+# Absensi DJKI
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Aplikasi web untuk mengelola kehadiran peserta PKL/magang, baik dari SMK maupun mahasiswa. Pembimbing (admin) mengelola data peserta dan menyetujui absensi, sedangkan peserta mengajukan absensi lewat portal siswa.
 
-Sistem Informasi Absensi Siswa adalah aplikasi berbasis web yang dirancang untuk mempermudah pengelolaan kehadiran siswa di sekolah. Dengan antarmuka yang intuitif dan fitur lengkap, aplikasi ini memungkinkan admin dan siswa untuk mengelola dan memantau absensi secara efisien.
+Tema antarmuka memakai palet biru `#2E77BC`, emas, dan navy `#1F2A44` dengan latar terang.
 
-## ✨ Demo
+## Fitur
 
-Aplikasi demo dapat diakses di:
+### Pembimbing (admin)
 
--   Portal Admin: [web-absensi.wuaze.com/admin](https://web-absensi.wuaze.com/admin/)
--   Portal Siswa: [web-absensi.wuaze.com/siswa](https://web-absensi.wuaze.com/siswa/)
+- Login dengan nama/username dan password. Nama diingat selama 30 hari, sehingga login berikutnya cukup mengisi password.
+- Dashboard dengan ringkasan kehadiran, grafik, dan kartu **Jadwal PKL** yang berlaku untuk semua peserta.
+- Kartu per sekolah menampilkan jumlah hadir/total peserta dan jumlah pengajuan yang menunggu persetujuan. Maksimal tiga kartu ditampilkan, sisanya lewat tombol "Lihat semua sekolah".
+- Manajemen data peserta: tambah satuan atau **tambah massal per sekolah** dengan satu password kelompok. Nama sekolah, kelas, jurusan, dan tanggal PKL diingat dari input terakhir.
+- Pilihan jurusan berupa kartu kode (misalnya `RPL`, `TKP`) dengan nama lengkap di bawahnya, plus opsi "Lainnya" untuk input manual.
+- Tanggal mulai dan selesai PKL bisa diubah untuk kebutuhan reschedule.
+- Filter sekolah, jenis peserta, kelas, dan jurusan pada halaman Absensi, Data Siswa, dan Laporan.
+- Persetujuan atau penolakan pengajuan absensi beserta bukti foto.
+- Ekspor laporan ke PDF dan Excel.
+- Profil pembimbing memakai nomor HP sebagai kontak, yang juga tampil di halaman pembimbing portal siswa.
+- Log aktivitas seluruh tindakan pengguna.
 
-**Kredensial Login Admin:**
+### Peserta (siswa/mahasiswa)
 
--   Username: `admin`
--   Password: `admin123`
+- Login memakai nama lengkap atau nomor HP dan password yang diberikan pembimbing. Nama tidak peduli spasi dan huruf besar.
+- Mengajukan absensi dengan keterangan dan bukti foto.
+- Melihat riwayat absensi dan status persetujuannya.
+- Mengubah nama, foto profil, dan password sendiri. Password kelompok bisa diganti setelah akun pertama dipakai.
+- Melihat profil pembimbing beserta nomor HP untuk dihubungi.
 
-**Kredensial Login Siswa:**
+## Teknologi
 
--   NIS: `2024002`
--   Password: `siswa_2024002`
+- PHP 8.0+ dengan PDO
+- MySQL 8.0
+- HTML, CSS, JavaScript, Tailwind CSS (CDN), Font Awesome
+- Dompdf untuk PDF dan PhpSpreadsheet untuk Excel
 
-## 🚀 Fitur
+## Instalasi
 
--   🔐 Sistem autentikasi yang aman untuk admin dan siswa
--   📝 Pengelolaan data absensi harian (hadir, sakit, izin, terlambat, alpha)
--   👨‍🎓 Manajemen data siswa berdasarkan kelas dan jurusan
--   ✅ Siswa dapat melakukan pengajuan absensi dengan bukti pendukung
--   ⚠️ Admin dapat menyetujui atau menolak pengajuan absensi
--   📊 Laporan absensi dengan berbagai filter (tanggal, kelas, jurusan)
--   📱 Desain responsif untuk berbagai ukuran perangkat
--   🔄 Log aktivitas untuk melacak tindakan pengguna dalam sistem
--   👤 Manajemen profil pengguna termasuk foto profil
+1. Clone repository ini:
 
-## 🛠️ Teknologi yang Digunakan
+   ```bash
+   git clone https://github.com/FatahSahaja/AbsensiPKL.git
+   cd AbsensiPKL
+   ```
 
--   **Front-end**: HTML5, CSS3, JavaScript, Bootstrap 5
--   **Back-end**: PHP 8.1+
--   **Database**: MySQL 8.0
--   **Library**: DOMPDF untuk generasi laporan PDF
--   **Framework CSS**: Font Awesome untuk ikon
--   **Koneksi Database**: MySQLi untuk pengelolaan database
+2. Buat database MySQL:
 
-## 📋 Persyaratan Sistem
+   ```sql
+   CREATE DATABASE absensi_siswa;
+   ```
 
--   PHP 8.0 atau lebih tinggi
--   MySQL 8.0 atau lebih tinggi
--   Web server (Apache/Nginx)
--   Ekstensi PHP: MySQLi, GD, FileInfo
+3. Import `database/database.sql`. File ini berisi struktur terbaru dan satu akun admin awal, tanpa data peserta.
 
-## 📥 Instalasi
+   ```bash
+   mysql -u root absensi_siswa < database/database.sql
+   ```
 
-1. Clone repositori ini:
+4. Sesuaikan koneksi database di `config/database.php` (`$db_host`, `$db_name`, `$db_user`, `$db_pass`).
 
-    ```bash
-    git clone https://github.com/faiz-hidayat/Web-Absensi.git
-    ```
+5. Pastikan folder `uploads/` bisa ditulis oleh web server. Subfolder dibuat otomatis saat ada unggahan.
 
-2. Pindah ke direktori proyek:
+   ```bash
+   mkdir -p uploads/admin uploads/bukti uploads/profile uploads/siswa
+   chmod 755 uploads
+   ```
 
-    ```bash
-    cd Web-Absensi
-    ```
+6. Buka aplikasi:
 
-3. Buat database baru:
+   ```
+   http://localhost/AbsensiPKL
+   ```
 
-    ```sql
-    CREATE DATABASE absensi_siswa;
-    ```
+## Akun awal
 
-4. Import struktur database dari file `database/database.sql`
+- Admin: username `admin`, password `admin123`, nama `Administrator`, nomor HP `081234567890`.
+- Ganti password admin setelah login pertama lewat halaman Profil.
+- Akun peserta dibuat oleh pembimbing lewat menu Data Siswa → Tambah Siswa. Tidak ada akun siswa bawaan.
 
-5. Konfigurasi koneksi database:
+Jika database sudah dibuat dari versi lama, jalankan berkas-berkas di `database/migrations/` secara berurutan untuk menyesuaikan struktur.
 
-    - Sesuaikan kredensial database pada file `config/database.php`
+## Struktur singkat
 
-6. Buat folder `uploads` dengan subfolder yang diperlukan:
+```
+admin/           halaman pembimbing (dashboard, absensi, siswa, laporan, profil)
+siswa/           halaman peserta (dashboard, riwayat, profil, pembimbing)
+config/          koneksi database, jurusan, dan helper aplikasi
+database/        struktur database dan migrasi
+assets/          logo, CSS tema, dan aset default
+uploads/         foto unggahan (tidak ikut ke repository)
+docs/            catatan pengembangan
+```
 
-    ```bash
-    mkdir -p uploads/admin uploads/siswa
-    chmod 755 uploads
-    ```
+## Kredit dan lisensi
 
-7. Akses aplikasi melalui browser:
-    ```
-    http://localhost/Web-Absensi
-    ```
+Bermula dari basis aplikasi absensi siswa open-source berlisensi MIT yang kemudian dirombak besar pada antarmuka, alur login, manajemen peserta, dan fitur PKL. Informasi lisensi asli tetap tercantum di [LICENSE](LICENSE).
 
-## 💻 Cara Penggunaan
-
-### Login Admin
-
--   Gunakan username `admin` dan password `admin123` untuk masuk ke panel admin
--   Kelola data siswa, absensi, dan laporan melalui menu yang tersedia
-
-### Login Siswa
-
--   Siswa menggunakan NIS dan password yang telah diberikan untuk login
--   Siswa dapat mengajukan absensi dan melihat riwayat absensi mereka
-
-### Pengelolaan Absensi
-
-1. **Pengajuan Absensi oleh Siswa**:
-
-    - Siswa login ke portal siswa
-    - Pilih status absensi (Hadir, Sakit, Izin)
-    - Isi keterangan jika diperlukan
-    - Upload bukti pendukung (untuk sakit atau izin)
-    - Kirim pengajuan untuk ditinjau oleh admin
-
-2. **Persetujuan Absensi oleh Admin**:
-
-    - Admin menerima notifikasi pengajuan absensi baru
-    - Admin dapat melihat detail pengajuan termasuk bukti
-    - Admin menyetujui atau menolak pengajuan tersebut
-
-3. **Laporan Absensi**:
-
-    - Admin dapat melihat laporan absensi siswa
-    - Filter berdasarkan tanggal, kelas, jurusan, atau status absensi
-    - Ekspor laporan dalam format PDF
-
-4. **Manajemen Siswa**:
-
-    - Admin dapat menambah, mengedit, dan menghapus data siswa
-    - Mengatur kelas dan jurusan siswa
-    - Mengatur akses login siswa
-
-5. **Log Aktivitas**:
-    - Admin dapat melihat log aktivitas sistem
-    - Memantau tindakan yang dilakukan oleh admin dan siswa
-
-## 📸 Screenshot
-
-![Dashboard Admin](/screenshots/dashboard-admin.png)
-![Dashboard Siswa](/screenshots/dashboard-siswa.png)
-
-## 👨‍💻 Pengembang
-
-Dikembangkan oleh [Muhammad Faiz Hidayat](https://github.com/faiz-hidayat)
-
-## 📄 Lisensi
-
-Proyek ini dilisensikan di bawah [MIT License](LICENSE).
+Proyek ini didistribusikan di bawah [MIT License](LICENSE).
