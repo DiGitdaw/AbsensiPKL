@@ -1,0 +1,36 @@
+/* Light DJKI theme: blue primary, gold accent, white surfaces. */
+:root {
+    color-scheme: light;
+}
+
+body {
+    color: #1F2A44;
+}
+
+.glass-effect {
+    background: #ffffff !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Teks pada tombol berkolor harus putih. */
+.bg-blue-600,
+.bg-blue-700,
+.bg-blue-600\/90,
+.bg-gray-900,
+.bg-red-600,
+.bg-red-700,
+.bg-green-600,
+.bg-green-700,
+button.bg-blue-600,
+button.bg-blue-700,
+a.bg-blue-600,
+a.bg-blue-700 {
+    color: #ffffff !important;
+}
+
+.bg-yellow-400,
+.bg-yellow-300,
+.bg-yellow-500 {
+    color: #1F2A44 !important;
+}

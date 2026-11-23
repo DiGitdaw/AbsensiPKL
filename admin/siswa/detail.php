@@ -60,7 +60,7 @@ foreach ($status_defaults as $status) {
 $status_colors = [
     'Hadir' => 'green',
     'Sakit' => 'yellow',
-    'Izin' => 'purple',
+    'Izin' => '#1E5AA8',
     'Terlambat' => 'orange',
     'Alpha' => 'red'
 ];
@@ -72,24 +72,25 @@ $status_colors = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Siswa - SMKN 40 Jakarta</title>
+    <title>Detail Siswa - Absensi DJKI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?= str_repeat('../', substr_count($_SERVER['PHP_SELF'], '/') - 1) ?>assets/css/theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .glass-effect {
-            background: rgba(17, 24, 39, 0.7);
+            background: #ffffff;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(147, 51, 234, 0.3);
+            border: 1px solid #BFDBFE;
         }
 
         body {
-            background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+            background: #F5F7FA;
         }
 
         .menu-active {
-            background: linear-gradient(to right, rgba(147, 51, 234, 0.2), rgba(147, 51, 234, 0.05));
-            border-left: 4px solid #9333ea;
+            background: linear-gradient(to right, #EFF6FF, #EFF6FF);
+            border-left: 4px solid #2E77BC;
         }
 
         /* Mobile responsive styles */
@@ -154,48 +155,48 @@ $status_colors = [
     </style>
 </head>
 
-<body class="min-h-screen text-white bg-fixed">
+<body class="min-h-screen text-gray-900 bg-fixed">
     <!-- Mobile Overlay - only visible when sidebar is open on mobile -->
-    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-gray-900/40 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
     <!-- Side Navigation -->
-    <aside id="sidebar" class="fixed top-0 left-0 h-screen w-64 glass-effect border-r border-purple-900/30 z-50 sidebar-transition -translate-x-full lg:translate-x-0">
-        <div class="flex items-center justify-between p-4 lg:p-6 border-b border-purple-900/30">
+    <aside id="sidebar" class="fixed top-0 left-0 h-screen w-64 glass-effect border-r border-blue-100 z-50 sidebar-transition -translate-x-full lg:translate-x-0">
+        <div class="flex items-center justify-between p-4 lg:p-6 border-b border-blue-100">
             <div class="flex items-center gap-3">
-                <img src="../../assets/default/logo-smk40.png" alt="SMKN 40" class="h-8 lg:h-10 w-auto">
+                <?= app_logo('../../', 'h-8 lg:h-10 w-auto') ?>
                 <div>
-                    <h1 class="font-semibold text-sm lg:text-base">SMKN 40</h1>
-                    <p class="text-xs text-gray-400">Sistem Absensi</p>
+                    <h1 class="font-semibold text-sm lg:text-base">Absensi DJKI</h1>
+                    <p class="text-xs text-gray-700">Sistem Absensi</p>
                 </div>
             </div>
             <!-- Close sidebar button - only visible on mobile -->
-            <button class="text-gray-400 hover:text-white lg:hidden" onclick="toggleSidebar()">
+            <button class="text-gray-700 hover:text-gray-900 lg:hidden" onclick="toggleSidebar()">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
 
         <nav class="p-4 space-y-2 overflow-y-auto no-scrollbar" style="max-height: calc(100vh - 76px);">
-            <a href="../dashboard/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../dashboard/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="../absensi/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../absensi/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-calendar-check"></i>
                 <span>Absensi</span>
             </a>
-            <a href="index.php" class="flex items-center gap-3 text-white/90 p-3 rounded-lg menu-active">
-                <i class="fas fa-users text-purple-500"></i>
+            <a href="index.php" class="flex items-center gap-3 text-gray-900 p-3 rounded-lg menu-active">
+                <i class="fas fa-users text-blue-600"></i>
                 <span>Data Siswa</span>
             </a>
-            <a href="../laporan/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../laporan/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-file-alt"></i>
                 <span>Laporan</span>
             </a>
-            <a href="../profil/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../profil/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-user-cog"></i>
                 <span>Profil</span>
             </a>
-            <a href="../logout.php" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors mt-10">
+            <a href="../logout.php" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors mt-10">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
             </a>
@@ -203,14 +204,14 @@ $status_colors = [
     </aside>
 
     <!-- Main Content -->
-    <main class="lg:ml-64 min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 transition-all duration-300">
+    <main class="lg:ml-64 min-h-screen bg-gradient-to-br from-white to-gray-50 transition-all duration-300">
         <!-- Mobile Header -->
-        <div class="lg:hidden bg-gray-900/60 backdrop-blur-lg sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-purple-900/30">
+        <div class="lg:hidden bg-white/80 backdrop-blur-lg sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-blue-100">
             <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-white p-2 -ml-2 rounded-lg hover:bg-gray-800/60" aria-label="Menu">
+                <button onclick="toggleSidebar()" class="text-gray-900 p-2 -ml-2 rounded-lg hover:bg-gray-50" aria-label="Menu">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
-                <img src="../../assets/default/logo-smk40.png" alt="SMKN 40" class="h-8 w-auto">
+                <?= app_logo('../../', 'h-8 w-auto') ?>
             </div>
             <div class="flex items-center gap-3">
                 <span id="current-time-mobile" class="text-sm font-medium hidden sm:block"></span>
@@ -218,7 +219,7 @@ $status_colors = [
                 // Use admin photo from session if available
                 $photo_path = $_SESSION['admin_photo'] ?? 'assets/default/avatar.png';
                 ?>
-                <img src="../../<?= $photo_path ?>" alt="Profile" class="h-8 w-8 rounded-full object-cover border border-purple-500/50">
+                <img src="../../<?= $photo_path ?>" alt="Profile" class="h-8 w-8 rounded-full object-cover border border-blue-300">
             </div>
         </div>
 
@@ -226,12 +227,12 @@ $status_colors = [
             <div class="max-w-7xl mx-auto">
                 <!-- Header with back button - enhanced for mobile -->
                 <div class="flex items-center mb-6">
-                    <a href="index.php" class="mr-3 p-2 rounded-full hover:bg-gray-800/60 transition-colors">
+                    <a href="index.php" class="mr-3 p-2 rounded-full hover:bg-gray-50 transition-colors">
                         <i class="fas fa-arrow-left"></i>
                     </a>
                     <div>
                         <h1 class="text-xl md:text-2xl font-bold">Detail Siswa</h1>
-                        <p class="text-sm md:text-base text-gray-400">Informasi lengkap data siswa</p>
+                        <p class="text-sm md:text-base text-gray-700">Informasi lengkap data siswa</p>
                     </div>
                 </div>
 
@@ -247,35 +248,50 @@ $status_colors = [
                     <!-- Student Profile Card - Mobile optimized -->
                     <div class="glass-effect rounded-xl overflow-hidden">
                         <!-- Header banner with proper mobile height -->
-                        <div class="h-24 sm:h-32 bg-gradient-to-r from-purple-600/30 to-blue-600/30 relative"></div>
+                        <div class="h-24 sm:h-32 bg-gradient-to-r from-blue-700/20 to-blue-600/30 relative"></div>
 
                         <!-- Profile content with adjusted spacing -->
                         <div class="px-4 sm:px-6 pb-5 sm:pb-6 -mt-12 sm:-mt-14 relative">
                             <!-- Profile picture with responsive size -->
                             <img src="../../<?= $siswa['foto_profil'] ?>"
                                 alt="<?= htmlspecialchars($siswa['nama_lengkap']) ?>"
-                                class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover border-4 border-gray-900 shadow-lg">
+                                class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover border-4 border-gray-300 shadow-lg">
 
                             <!-- Student info with responsive spacing -->
                             <h3 class="text-lg sm:text-xl font-bold mt-3 sm:mt-4"><?= htmlspecialchars($siswa['nama_lengkap']) ?></h3>
-                            <p class="text-sm text-gray-400 mb-3 sm:mb-4"><?= $siswa['nis'] ?> • Kelas <?= $siswa['kelas'] ?> <?= $siswa['jurusan'] ?></p>
+                            <p class="text-sm text-gray-700 mb-1"><?= htmlspecialchars($siswa['nis'] ?? '') ?><?= $siswa['sekolah'] ? ' • ' . htmlspecialchars($siswa['sekolah']) : '' ?> • Kelas <?= htmlspecialchars($siswa['kelas']) ?> • <?= htmlspecialchars(jurusan_label($siswa['jurusan'])) ?></p>
+                            <p class="text-xs text-gray-500 mb-3 sm:mb-4">
+                                <?= ($siswa['jenis'] ?? 'smk') === 'mahasiswa' ? 'Mahasiswa' : 'SMK' ?><?php if (!empty($siswa['jenis_kelamin'])): ?> • <?= $siswa['jenis_kelamin'] === 'L' ? 'Laki-laki' : 'Perempuan' ?><?php endif; ?>
+                            </p>
 
                             <!-- Contact info -->
                             <div class="space-y-2 sm:space-y-3">
                                 <div class="flex items-center gap-3">
-                                    <i class="fas fa-envelope w-5 text-center text-purple-500"></i>
-                                    <span class="text-sm break-all"><?= htmlspecialchars($siswa['email']) ?></span>
+                                    <i class="fas fa-envelope w-5 text-center text-blue-600"></i>
+                                    <span class="text-sm break-all"><?= htmlspecialchars($siswa['email'] ?? '') ?></span>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <i class="fas fa-clock w-5 text-center text-purple-500"></i>
+                                    <i class="fas fa-clock w-5 text-center text-blue-600"></i>
                                     <span class="text-sm">Terdaftar: <?= date('d/m/Y', strtotime($siswa['created_at'])) ?></span>
                                 </div>
+                                <?php if (!empty($siswa['no_hp'])): ?>
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-phone w-5 text-center text-blue-600"></i>
+                                        <span class="text-sm break-all"><?= htmlspecialchars($siswa['no_hp']) ?></span>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if (!empty($siswa['pkl_mulai']) || !empty($siswa['pkl_selesai'])): ?>
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-calendar-alt w-5 text-center text-blue-600"></i>
+                                        <span class="text-sm">PKL: <?= $siswa['pkl_mulai'] ? date('d/m/Y', strtotime($siswa['pkl_mulai'])) : '-' ?> s/d <?= $siswa['pkl_selesai'] ? date('d/m/Y', strtotime($siswa['pkl_selesai'])) : '-' ?></span>
+                                    </div>
+                                <?php endif; ?>
                             </div>
 
                             <!-- Action buttons with better touch targets -->
                             <div class="flex mt-4 sm:mt-5 gap-3">
                                 <a href="edit.php?id=<?= $id ?>"
-                                    class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-center py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors touch-effect">
+                                    class="flex-1 bg-blue-600 hover:bg-blue-600 text-center py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors touch-effect">
                                     <i class="fas fa-edit mr-2"></i>Edit
                                 </a>
                                 <button onclick="confirmDelete(<?= $id ?>)"
@@ -285,8 +301,8 @@ $status_colors = [
                             </div>
 
                             <!-- View all attendances link -->
-                            <a href="../absensi/?search=<?= urlencode($siswa['nis']) ?>"
-                                class="block mt-3 bg-gray-800 hover:bg-gray-700 text-center py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors touch-effect">
+                            <a href="../absensi/?search=<?= urlencode($siswa['nis'] ?? '') ?>"
+                                class="block mt-3 bg-gray-50 hover:bg-gray-100 text-center py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors touch-effect">
                                 <i class="fas fa-history mr-2"></i>Lihat Semua Riwayat Absensi
                             </a>
                         </div>
@@ -318,8 +334,8 @@ $status_colors = [
                         </div>
 
                         <!-- Mobile-only total attendances -->
-                        <div class="mt-4 pt-3 border-t border-gray-700 text-center sm:hidden">
-                            <p class="text-sm text-gray-400">Total Kehadiran:</p>
+                        <div class="mt-4 pt-3 border-t border-gray-200 text-center sm:hidden">
+                            <p class="text-sm text-gray-700">Total Kehadiran:</p>
                             <p class="text-lg font-medium"><?= $total_absensi ?> hari</p>
                         </div>
                     </div>
@@ -332,11 +348,11 @@ $status_colors = [
                             <div class="space-y-2 sm:space-y-3">
                                 <?php foreach ($recent_absensi as $absensi): ?>
                                     <a href="../absensi/detail.php?id=<?= $absensi['id'] ?>"
-                                        class="block p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors touch-effect">
+                                        class="block p-3 rounded-lg bg-gray-50 hover:bg-gray-50 transition-colors touch-effect">
                                         <div class="flex justify-between items-start">
                                             <div>
                                                 <p class="text-sm font-medium"><?= date('d/m/Y', strtotime($absensi['tanggal'])) ?></p>
-                                                <p class="text-xs text-gray-400 mt-0.5">
+                                                <p class="text-xs text-gray-700 mt-0.5">
                                                     <?= $absensi['jam_masuk'] !== '00:00:00' ? date('H:i', strtotime($absensi['jam_masuk'])) : '-' ?>
                                                 </p>
                                             </div>
@@ -369,7 +385,7 @@ $status_colors = [
 
                 <!-- Back button on mobile only -->
                 <div class="mt-6 flex justify-center lg:hidden">
-                    <a href="index.php" class="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-sm transition-colors">
+                    <a href="index.php" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-sm transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i> Kembali ke Daftar Siswa
                     </a>
                 </div>
@@ -379,12 +395,12 @@ $status_colors = [
 
     <!-- Delete Confirmation Modal - Mobile optimized -->
     <div id="deleteModal" class="fixed inset-0 flex items-center justify-center z-[100] hidden">
-        <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideDeleteModal()"></div>
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-50" onclick="hideDeleteModal()"></div>
         <div class="glass-effect rounded-lg p-5 sm:p-8 w-11/12 max-w-md relative z-10 mx-4 animate-fade-in">
             <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Konfirmasi Hapus</h3>
-            <p class="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">Apakah Anda yakin ingin menghapus data siswa ini? Semua data absensi terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.</p>
+            <p class="text-gray-700 mb-4 sm:mb-6 text-sm sm:text-base">Apakah Anda yakin ingin menghapus data siswa ini? Semua data absensi terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.</p>
             <div class="flex justify-end gap-3 sm:gap-4">
-                <button onclick="hideDeleteModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm">
+                <button onclick="hideDeleteModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
                     Batal
                 </button>
                 <form method="POST" action="delete.php">
@@ -413,7 +429,7 @@ $status_colors = [
                 backgroundColor: [
                     'rgb(16, 185, 129)', // Green for Hadir
                     'rgb(234, 179, 8)', // Yellow for Sakit
-                    'rgb(139, 92, 246)', // Purple for Izin
+                    '#1E5AA8', // warna Izin
                     'rgb(249, 115, 22)', // Orange for Terlambat
                     'rgb(239, 68, 68)' // Red for Alpha
                 ],
@@ -435,11 +451,11 @@ $status_colors = [
                         display: false
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
+                        backgroundColor: '#ffffff',
+                        titleColor: '#1F2A44',
+                        bodyColor: '#1F2A44',
                         padding: 10,
-                        borderColor: 'rgba(147, 51, 234, 0.3)',
+                        borderColor: '#BFDBFE',
                         borderWidth: 1,
                         displayColors: true,
                         usePointStyle: true,

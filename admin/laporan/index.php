@@ -13,8 +13,8 @@ $default_end_date = date('Y-m-t');    // Last day of current month
 // Get filter parameters
 $start_date = $_GET['start_date'] ?? $default_start_date;
 $end_date = $_GET['end_date'] ?? $default_end_date;
-$kelas = $_GET['kelas'] ?? '';
-$jurusan = $_GET['jurusan'] ?? '';
+$kelas = trim($_GET['kelas'] ?? '');
+$jurusan = trim($_GET['jurusan'] ?? '');
 $siswa_id = $_GET['siswa_id'] ?? '';
 $status = $_GET['status'] ?? '';
 
@@ -240,15 +240,15 @@ function getSortIcon($column, $current_sort, $current_order)
         return '<i class="fas fa-sort text-gray-500 opacity-50"></i>';
     }
     return $current_order === 'ASC'
-        ? '<i class="fas fa-sort-up text-purple-500"></i>'
-        : '<i class="fas fa-sort-down text-purple-500"></i>';
+        ? '<i class="fas fa-sort-up text-blue-600"></i>'
+        : '<i class="fas fa-sort-down text-blue-600"></i>';
 }
 
 // Generate chart colors for statuses
 $status_colors = [
     'Hadir' => '#10B981',     // green
-    'Sakit' => '#EAB308',     // yellow
-    'Izin' => '#8B5CF6',      // purple
+    'Sakit' => '#A16207',     // yellow
+    'Izin' => '#1E5AA8',      // biru
     'Terlambat' => '#F97316', // orange
     'Alpha' => '#EF4444'      // red
 ];
@@ -366,24 +366,25 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Absensi - SMKN 40 Jakarta</title>
+    <title>Laporan Absensi - Absensi DJKI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?= str_repeat('../', substr_count($_SERVER['PHP_SELF'], '/') - 1) ?>assets/css/theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .glass-effect {
-            background: rgba(17, 24, 39, 0.7);
+            background: #ffffff;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(147, 51, 234, 0.3);
+            border: 1px solid #BFDBFE;
         }
 
         .menu-active {
-            background: linear-gradient(to right, rgba(147, 51, 234, 0.2), rgba(147, 51, 234, 0.05));
-            border-left: 4px solid #9333ea;
+            background: linear-gradient(to right, #EFF6FF, #EFF6FF);
+            border-left: 4px solid #2E77BC;
         }
 
         body {
-            background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+            background: #F5F7FA;
         }
 
         /* Status badge styles */
@@ -395,7 +396,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
 
         .status-sakit {
             background: rgba(234, 179, 8, 0.1);
-            color: #EAB308;
+            color: #A16207;
             border: 1px solid rgba(234, 179, 8, 0.3);
         }
 
@@ -477,48 +478,48 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
 </head>
 
-<body class="min-h-screen text-white bg-fixed">
+<body class="min-h-screen text-gray-900 bg-fixed">
     <!-- Mobile Overlay - only visible when sidebar is open on mobile -->
-    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-gray-900/40 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
     <!-- Side Navigation -->
-    <aside id="sidebar" class="fixed top-0 left-0 h-screen w-64 glass-effect border-r border-purple-900/30 z-50 sidebar-transition -translate-x-full lg:translate-x-0">
-        <div class="flex items-center justify-between p-4 lg:p-6 border-b border-purple-900/30">
+    <aside id="sidebar" class="fixed top-0 left-0 h-screen w-64 glass-effect border-r border-blue-100 z-50 sidebar-transition -translate-x-full lg:translate-x-0">
+        <div class="flex items-center justify-between p-4 lg:p-6 border-b border-blue-100">
             <div class="flex items-center gap-3">
-                <img src="../../assets/default/logo-smk40.png" alt="SMKN 40" class="h-8 lg:h-10 w-auto">
+                <?= app_logo('../../', 'h-8 lg:h-10 w-auto') ?>
                 <div>
-                    <h1 class="font-semibold text-sm lg:text-base">SMKN 40</h1>
-                    <p class="text-xs text-gray-400">Sistem Absensi</p>
+                    <h1 class="font-semibold text-sm lg:text-base">Absensi DJKI</h1>
+                    <p class="text-xs text-gray-700">Sistem Absensi</p>
                 </div>
             </div>
             <!-- Close sidebar button - only visible on mobile -->
-            <button class="text-gray-400 hover:text-white lg:hidden" onclick="toggleSidebar()">
+            <button class="text-gray-700 hover:text-gray-900 lg:hidden" onclick="toggleSidebar()">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
 
         <nav class="p-4 space-y-2 overflow-y-auto no-scrollbar" style="max-height: calc(100vh - 76px);">
-            <a href="../dashboard/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../dashboard/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="../absensi/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../absensi/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-calendar-check"></i>
                 <span>Absensi</span>
             </a>
-            <a href="../siswa/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../siswa/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-users"></i>
                 <span>Data Siswa</span>
             </a>
-            <a href="index.php" class="flex items-center gap-3 text-white/90 p-3 rounded-lg menu-active">
-                <i class="fas fa-file-alt text-purple-500"></i>
+            <a href="index.php" class="flex items-center gap-3 text-gray-900 p-3 rounded-lg menu-active">
+                <i class="fas fa-file-alt text-blue-600"></i>
                 <span>Laporan</span>
             </a>
-            <a href="../profil/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../profil/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-user-cog"></i>
                 <span>Profil</span>
             </a>
-            <a href="../logout.php" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors mt-10">
+            <a href="../logout.php" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors mt-10">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
             </a>
@@ -526,14 +527,14 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
     </aside>
 
     <!-- Main Content -->
-    <main class="lg:ml-64 min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 transition-all duration-300">
+    <main class="lg:ml-64 min-h-screen bg-gradient-to-br from-white to-gray-50 transition-all duration-300">
         <!-- Mobile Header -->
-        <div class="lg:hidden bg-gray-900/60 backdrop-blur-lg sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-purple-900/30">
+        <div class="lg:hidden bg-white/80 backdrop-blur-lg sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-blue-100">
             <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-white p-2 -ml-2 rounded-lg hover:bg-gray-800/60" aria-label="Menu">
+                <button onclick="toggleSidebar()" class="text-gray-900 p-2 -ml-2 rounded-lg hover:bg-gray-50" aria-label="Menu">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
-                <img src="../../assets/default/logo-smk40.png" alt="SMKN 40" class="h-8 w-auto">
+                <?= app_logo('../../', 'h-8 w-auto') ?>
             </div>
             <div class="flex items-center gap-3">
                 <span id="current-time-mobile" class="text-sm font-medium hidden sm:block"></span>
@@ -541,7 +542,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                 // Use admin photo from session if available
                 $photo_path = $_SESSION['admin_photo'] ?? 'assets/default/avatar.png';
                 ?>
-                <img src="../../<?= $photo_path ?>" alt="Profile" class="h-8 w-8 rounded-full object-cover border border-purple-500/50">
+                <img src="../../<?= $photo_path ?>" alt="Profile" class="h-8 w-8 rounded-full object-cover border border-blue-300">
             </div>
         </div>
 
@@ -551,7 +552,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <header class="flex flex-wrap justify-between items-center mb-6 gap-4">
                     <div>
                         <h1 class="text-xl md:text-2xl font-bold">Laporan Absensi</h1>
-                        <p class="text-gray-400 text-sm md:text-base">Statistik dan rekapitulasi data kehadiran siswa</p>
+                        <p class="text-gray-700 text-sm md:text-base">Statistik dan rekapitulasi data kehadiran siswa</p>
                     </div>
                     <div class="flex gap-3">
                         <a href="export.php?format=pdf<?= isset($_SERVER['QUERY_STRING']) ? '&' . $_SERVER['QUERY_STRING'] : '' ?>"
@@ -571,20 +572,20 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <form method="GET" id="filterForm" class="space-y-6">
                         <div class="grid grid-cols-1 gap-4">
                             <!-- Date Range Section -->
-                            <div class="bg-gray-800/30 rounded-lg p-4">
-                                <h4 class="text-sm font-medium mb-3 text-purple-400">
+                            <div class="bg-gray-100 rounded-lg p-4">
+                                <h4 class="text-sm font-medium mb-3 text-blue-600">
                                     <i class="fas fa-calendar-alt mr-2"></i> Periode Waktu
                                 </h4>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="text-xs text-gray-400 block mb-1">Tanggal Mulai</label>
+                                        <label class="text-xs text-gray-700 block mb-1">Tanggal Mulai</label>
                                         <input type="date" name="start_date" value="<?= $start_date ?>"
-                                            class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+                                            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
                                     </div>
                                     <div>
-                                        <label class="text-xs text-gray-400 block mb-1">Tanggal Akhir</label>
+                                        <label class="text-xs text-gray-700 block mb-1">Tanggal Akhir</label>
                                         <input type="date" name="end_date" value="<?= $end_date ?>"
-                                            class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+                                            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
                                     </div>
                                 </div>
                             </div>
@@ -592,42 +593,44 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                             <!-- Additional Filters - Now in a responsive grid -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <!-- Class & Major Filter -->
-                                <div class="bg-gray-800/30 rounded-lg p-4">
-                                    <h4 class="text-sm font-medium mb-3 text-purple-400">
+                                <div class="bg-gray-100 rounded-lg p-4">
+                                    <h4 class="text-sm font-medium mb-3 text-blue-600">
                                         <i class="fas fa-school mr-2"></i> Kelas & Jurusan
                                     </h4>
                                     <div class="space-y-3">
                                         <div>
-                                            <label class="text-xs text-gray-400 block mb-1">Kelas</label>
-                                            <select name="kelas" class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
-                                                <option value="">Semua Kelas</option>
-                                                <option value="10" <?= $kelas === '10' ? 'selected' : '' ?>>Kelas 10</option>
-                                                <option value="11" <?= $kelas === '11' ? 'selected' : '' ?>>Kelas 11</option>
-                                                <option value="12" <?= $kelas === '12' ? 'selected' : '' ?>>Kelas 12</option>
-                                            </select>
+                                            <label class="text-xs text-gray-700 block mb-1">Kelas</label>
+                                            <input type="text" name="kelas" list="kelas-options" value="<?= htmlspecialchars($kelas) ?>"
+                                                placeholder="Semua Kelas" autocomplete="off"
+                                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
+                                            <datalist id="kelas-options">
+                                                <?php foreach (array_merge(kelas_options($conn, 'smk'), kelas_options($conn, 'mahasiswa')) as $option): ?>
+                                                    <option value="<?= htmlspecialchars($option) ?>"></option>
+                                                <?php endforeach; ?>
+                                            </datalist>
                                         </div>
                                         <div>
-                                            <label class="text-xs text-gray-400 block mb-1">Jurusan</label>
-                                            <select name="jurusan" class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
-                                                <option value="">Semua Jurusan</option>
-                                                <option value="RPL" <?= $jurusan === 'RPL' ? 'selected' : '' ?>>RPL</option>
-                                                <option value="DKV" <?= $jurusan === 'DKV' ? 'selected' : '' ?>>DKV</option>
-                                                <option value="AK" <?= $jurusan === 'AK' ? 'selected' : '' ?>>AK</option>
-                                                <option value="BR" <?= $jurusan === 'BR' ? 'selected' : '' ?>>BR</option>
-                                                <option value="MP" <?= $jurusan === 'MP' ? 'selected' : '' ?>>MP</option>
-                                            </select>
+                                            <label class="text-xs text-gray-700 block mb-1">Jurusan</label>
+                                            <input type="text" name="jurusan" list="jurusan-options" value="<?= htmlspecialchars($jurusan) ?>"
+                                                placeholder="Semua Jurusan" autocomplete="off"
+                                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
+                                            <datalist id="jurusan-options">
+                                                <?php foreach (jurusan_options($conn) as $option): ?>
+                                                    <option value="<?= htmlspecialchars($option) ?>"></option>
+                                                <?php endforeach; ?>
+                                            </datalist>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Status Filter -->
-                                <div class="bg-gray-800/30 rounded-lg p-4">
-                                    <h4 class="text-sm font-medium mb-3 text-purple-400">
+                                <div class="bg-gray-100 rounded-lg p-4">
+                                    <h4 class="text-sm font-medium mb-3 text-blue-600">
                                         <i class="fas fa-filter mr-2"></i> Status Kehadiran
                                     </h4>
                                     <div>
-                                        <label class="text-xs text-gray-400 block mb-1">Status</label>
-                                        <select name="status" class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+                                        <label class="text-xs text-gray-700 block mb-1">Status</label>
+                                        <select name="status" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
                                             <option value="">Semua Status</option>
                                             <option value="Hadir" <?= $status === 'Hadir' ? 'selected' : '' ?>>Hadir</option>
                                             <option value="Sakit" <?= $status === 'Sakit' ? 'selected' : '' ?>>Sakit</option>
@@ -639,17 +642,17 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </div>
 
                                 <!-- Student Selection -->
-                                <div class="bg-gray-800/30 rounded-lg p-4">
-                                    <h4 class="text-sm font-medium mb-3 text-purple-400">
+                                <div class="bg-gray-100 rounded-lg p-4">
+                                    <h4 class="text-sm font-medium mb-3 text-blue-600">
                                         <i class="fas fa-user-graduate mr-2"></i> Siswa
                                     </h4>
                                     <div>
-                                        <label class="text-xs text-gray-400 block mb-1">Pilih Siswa</label>
-                                        <select name="siswa_id" class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+                                        <label class="text-xs text-gray-700 block mb-1">Pilih Siswa</label>
+                                        <select name="siswa_id" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
                                             <option value="">Semua Siswa</option>
                                             <?php foreach ($student_list as $student): ?>
                                                 <option value="<?= $student['id'] ?>" <?= $siswa_id == $student['id'] ? 'selected' : '' ?>>
-                                                    <?= htmlspecialchars($student['nama_lengkap']) ?> (<?= $student['nis'] ?>)
+                                                    <?= htmlspecialchars($student['nama_lengkap']) ?> (<?= $student['nis'] ?? '' ?>)
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
@@ -658,15 +661,15 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
 
-                        <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-700">
+                        <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
                             <div class="w-full sm:w-auto">
                                 <?php if (!empty($_GET) && (isset($_GET['start_date']) || isset($_GET['end_date']) || isset($_GET['kelas']) || isset($_GET['jurusan']) || isset($_GET['siswa_id']) || isset($_GET['status']))): ?>
-                                    <button type="button" onclick="resetFilters()" class="w-full sm:w-auto px-4 py-2 border border-gray-700 hover:border-gray-600 rounded-lg text-sm text-gray-400 hover:text-white transition-colors">
+                                    <button type="button" onclick="resetFilters()" class="w-full sm:w-auto px-4 py-2 border border-gray-200 hover:border-gray-300 rounded-lg text-sm text-gray-700 hover:text-gray-900 transition-colors">
                                         <i class="fas fa-redo mr-2"></i> Reset Filter
                                     </button>
                                 <?php endif; ?>
                             </div>
-                            <button type="submit" class="w-full sm:w-auto px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-colors">
+                            <button type="submit" class="w-full sm:w-auto px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors">
                                 <i class="fas fa-filter mr-2"></i> Terapkan Filter
                             </button>
                         </div>
@@ -687,33 +690,33 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="text-right">
                                     <span class="text-xl font-bold"><?= $status_counts['Hadir'] ?></span>
                                     <?php if ($total_absensi > 0): ?>
-                                        <span class="text-xs text-gray-400 block"><?= round(($status_counts['Hadir'] / $total_absensi) * 100, 1) ?>%</span>
+                                        <span class="text-xs text-gray-700 block"><?= round(($status_counts['Hadir'] / $total_absensi) * 100, 1) ?>%</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
 
-                            <div class="flex justify-between items-center p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                            <div class="flex justify-between items-center p-3 bg-blue-500/10 border border-blue-200 rounded-lg">
                                 <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
+                                    <div class="w-3 h-3 bg-blue-600 rounded-full mr-3"></div>
                                     <span>Sakit</span>
                                 </div>
                                 <div class="text-right">
                                     <span class="text-xl font-bold"><?= $status_counts['Sakit'] ?></span>
                                     <?php if ($total_absensi > 0): ?>
-                                        <span class="text-xs text-gray-400 block"><?= round(($status_counts['Sakit'] / $total_absensi) * 100, 1) ?>%</span>
+                                        <span class="text-xs text-gray-700 block"><?= round(($status_counts['Sakit'] / $total_absensi) * 100, 1) ?>%</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
 
-                            <div class="flex justify-between items-center p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                            <div class="flex justify-between items-center p-3 bg-blue-500/10 border border-blue-200 rounded-lg">
                                 <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+                                    <div class="w-3 h-3 bg-blue-600 rounded-full mr-3"></div>
                                     <span>Izin</span>
                                 </div>
                                 <div class="text-right">
                                     <span class="text-xl font-bold"><?= $status_counts['Izin'] ?></span>
                                     <?php if ($total_absensi > 0): ?>
-                                        <span class="text-xs text-gray-400 block"><?= round(($status_counts['Izin'] / $total_absensi) * 100, 1) ?>%</span>
+                                        <span class="text-xs text-gray-700 block"><?= round(($status_counts['Izin'] / $total_absensi) * 100, 1) ?>%</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -726,7 +729,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="text-right">
                                     <span class="text-xl font-bold"><?= $status_counts['Terlambat'] ?></span>
                                     <?php if ($total_absensi > 0): ?>
-                                        <span class="text-xs text-gray-400 block"><?= round(($status_counts['Terlambat'] / $total_absensi) * 100, 1) ?>%</span>
+                                        <span class="text-xs text-gray-700 block"><?= round(($status_counts['Terlambat'] / $total_absensi) * 100, 1) ?>%</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -739,12 +742,12 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="text-right">
                                     <span class="text-xl font-bold"><?= $status_counts['Alpha'] ?></span>
                                     <?php if ($total_absensi > 0): ?>
-                                        <span class="text-xs text-gray-400 block"><?= round(($status_counts['Alpha'] / $total_absensi) * 100, 1) ?>%</span>
+                                        <span class="text-xs text-gray-700 block"><?= round(($status_counts['Alpha'] / $total_absensi) * 100, 1) ?>%</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
 
-                            <div class="border-t border-gray-700 pt-4 mt-4">
+                            <div class="border-t border-gray-200 pt-4 mt-4">
                                 <div class="flex justify-between items-center">
                                     <span class="font-semibold">Total</span>
                                     <span class="text-xl font-bold"><?= $total_absensi ?></span>
@@ -778,9 +781,9 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <!-- Data Table - Made responsive with horizontal scrolling -->
                 <div class="glass-effect rounded-xl overflow-hidden">
-                    <div class="p-4 sm:p-6 border-b border-gray-800">
+                    <div class="p-4 sm:p-6 border-b border-gray-200">
                         <h3 class="font-semibold text-lg">Data Detail Kehadiran</h3>
-                        <p class="text-sm text-gray-400 mt-1">
+                        <p class="text-sm text-gray-700 mt-1">
                             Periode: <?= date('d F Y', strtotime($start_date)) ?> - <?= date('d F Y', strtotime($end_date)) ?>
                         </p>
                     </div>
@@ -789,34 +792,34 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="overflow-x-auto table-container">
                             <table class="w-full">
                                 <thead>
-                                    <tr class="bg-gray-800/50 text-gray-300 text-left">
+                                    <tr class="bg-gray-50 text-gray-700 text-left">
                                         <th class="px-6 py-3 text-xs font-medium">
-                                            <a href="<?= buildUrl(null, 'tanggal', $sort_column == 'tanggal' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-white">
+                                            <a href="<?= buildUrl(null, 'tanggal', $sort_column == 'tanggal' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-gray-900">
                                                 Tanggal
                                                 <?= getSortIcon('tanggal', $sort_column, $sort_order) ?>
                                             </a>
                                         </th>
                                         <th class="px-6 py-3 text-xs font-medium">
-                                            <a href="<?= buildUrl(null, 'nis', $sort_column == 'nis' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-white">
+                                            <a href="<?= buildUrl(null, 'nis', $sort_column == 'nis' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-gray-900">
                                                 NIS
                                                 <?= getSortIcon('nis', $sort_column, $sort_order) ?>
                                             </a>
                                         </th>
                                         <th class="px-6 py-3 text-xs font-medium">
-                                            <a href="<?= buildUrl(null, 'nama_lengkap', $sort_column == 'nama_lengkap' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-white">
+                                            <a href="<?= buildUrl(null, 'nama_lengkap', $sort_column == 'nama_lengkap' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-gray-900">
                                                 Nama Siswa
                                                 <?= getSortIcon('nama_lengkap', $sort_column, $sort_order) ?>
                                             </a>
                                         </th>
                                         <th class="px-6 py-3 text-xs font-medium">
-                                            <a href="<?= buildUrl(null, 'kelas', $sort_column == 'kelas' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-white">
+                                            <a href="<?= buildUrl(null, 'kelas', $sort_column == 'kelas' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-gray-900">
                                                 Kelas
                                                 <?= getSortIcon('kelas', $sort_column, $sort_order) ?>
                                             </a>
                                         </th>
                                         <th class="px-6 py-3 text-xs font-medium">Jam Masuk</th>
                                         <th class="px-6 py-3 text-xs font-medium">
-                                            <a href="<?= buildUrl(null, 'status', $sort_column == 'status' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-white">
+                                            <a href="<?= buildUrl(null, 'status', $sort_column == 'status' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-gray-900">
                                                 Status
                                                 <?= getSortIcon('status', $sort_column, $sort_order) ?>
                                             </a>
@@ -824,13 +827,13 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <th class="px-6 py-3 text-xs font-medium text-center">Detail</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-800">
+                                <tbody class="divide-y divide-gray-200">
                                     <?php foreach ($detail_records as $data): ?>
-                                        <tr class="hover:bg-purple-900/5 transition-colors">
+                                        <tr class="hover:bg-blue-50 transition-colors">
                                             <td class="px-6 py-4 text-sm">
                                                 <?= date('d/m/Y', strtotime($data['tanggal'])) ?>
                                             </td>
-                                            <td class="px-6 py-4 text-sm"><?= htmlspecialchars($data['nis']) ?></td>
+                                            <td class="px-6 py-4 text-sm"><?= htmlspecialchars($data['nis'] ?? '') ?></td>
                                             <td class="px-6 py-4 text-sm">
                                                 <div class="flex items-center">
                                                     <img src="../../<?= $data['foto_profil'] ?: 'assets/default/avatar.png' ?>"
@@ -840,7 +843,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 text-sm">
-                                                <?= $data['kelas'] ?> <?= $data['jurusan'] ?>
+                                                <?= htmlspecialchars($data['kelas']) ?> <?= htmlspecialchars(jurusan_label($data['jurusan'])) ?>
                                             </td>
                                             <td class="px-6 py-4 text-sm">
                                                 <?= $data['jam_masuk'] !== '00:00:00' ? date('H:i', strtotime($data['jam_masuk'])) : '-' ?>
@@ -851,7 +854,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 text-center">
-                                                <a href="../absensi/detail.php?id=<?= $data['id'] ?>" class="text-blue-400 hover:text-blue-300">
+                                                <a href="../absensi/detail.php?id=<?= $data['id'] ?>" class="text-blue-600 hover:text-blue-700">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                             </td>
@@ -862,16 +865,16 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
 
                         <!-- Responsive Pagination -->
-                        <div class="p-4 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <p class="text-sm text-gray-400 order-2 sm:order-1">
+                        <div class="p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <p class="text-sm text-gray-700 order-2 sm:order-1">
                                 Menampilkan <?= min($offset + 1, $total_detail_items) ?> - <?= min($offset + $items_per_page, $total_detail_items) ?> dari <?= $total_detail_items ?> data
                             </p>
                             <div class="flex space-x-1 order-1 sm:order-2 pagination-compact">
                                 <?php if ($page > 1): ?>
-                                    <a href="<?= buildUrl(1) ?>" class="px-2 sm:px-3 py-1.5 bg-gray-800 rounded hover:bg-gray-700 text-sm flex items-center justify-center min-w-[32px]">
+                                    <a href="<?= buildUrl(1) ?>" class="px-2 sm:px-3 py-1.5 bg-gray-50 rounded hover:bg-gray-100 text-sm flex items-center justify-center min-w-[32px]">
                                         <i class="fas fa-angle-double-left"></i>
                                     </a>
-                                    <a href="<?= buildUrl($page - 1) ?>" class="px-2 sm:px-3 py-1.5 bg-gray-800 rounded hover:bg-gray-700 text-sm flex items-center justify-center min-w-[32px]">
+                                    <a href="<?= buildUrl($page - 1) ?>" class="px-2 sm:px-3 py-1.5 bg-gray-50 rounded hover:bg-gray-100 text-sm flex items-center justify-center min-w-[32px]">
                                         <i class="fas fa-angle-left"></i>
                                     </a>
                                 <?php endif; ?>
@@ -891,8 +894,8 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 for ($i = $start_page; $i <= $end_page; $i++) {
                                     $is_current = $i == $page;
                                     $class = $is_current
-                                        ? 'px-2 sm:px-3 py-1.5 bg-purple-600 rounded text-white text-sm flex items-center justify-center min-w-[32px] current-page page-number'
-                                        : 'px-2 sm:px-3 py-1.5 bg-gray-800 rounded hover:bg-gray-700 text-sm flex items-center justify-center min-w-[32px] page-number';
+                                        ? 'px-2 sm:px-3 py-1.5 bg-blue-600 rounded text-white text-sm flex items-center justify-center min-w-[32px] current-page page-number'
+                                        : 'px-2 sm:px-3 py-1.5 bg-gray-50 rounded hover:bg-gray-100 text-sm flex items-center justify-center min-w-[32px] page-number';
 
                                     echo '<a href="' . buildUrl($i) . '" class="' . $class . '">' . $i . '</a>';
                                 }
@@ -904,10 +907,10 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 ?>
 
                                 <?php if ($page < $total_pages): ?>
-                                    <a href="<?= buildUrl($page + 1) ?>" class="px-2 sm:px-3 py-1.5 bg-gray-800 rounded hover:bg-gray-700 text-sm flex items-center justify-center min-w-[32px]">
+                                    <a href="<?= buildUrl($page + 1) ?>" class="px-2 sm:px-3 py-1.5 bg-gray-50 rounded hover:bg-gray-100 text-sm flex items-center justify-center min-w-[32px]">
                                         <i class="fas fa-angle-right"></i>
                                     </a>
-                                    <a href="<?= buildUrl($total_pages) ?>" class="px-2 sm:px-3 py-1.5 bg-gray-800 rounded hover:bg-gray-700 text-sm flex items-center justify-center min-w-[32px]">
+                                    <a href="<?= buildUrl($total_pages) ?>" class="px-2 sm:px-3 py-1.5 bg-gray-50 rounded hover:bg-gray-100 text-sm flex items-center justify-center min-w-[32px]">
                                         <i class="fas fa-angle-double-right"></i>
                                     </a>
                                 <?php endif; ?>
@@ -915,9 +918,9 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     <?php else: ?>
                         <div class="p-10 text-center">
-                            <i class="fas fa-search text-5xl text-gray-600 mb-4"></i>
-                            <p class="text-gray-400">Tidak ada data yang ditemukan untuk filter yang dipilih</p>
-                            <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-search text-5xl text-gray-700 mb-4"></i>
+                            <p class="text-gray-700">Tidak ada data yang ditemukan untuk filter yang dipilih</p>
+                            <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors">
                                 <i class="fas fa-redo mr-2"></i> Reset Filter
                             </button>
                         </div>
@@ -1001,8 +1004,8 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                     backgroundColor: [
                         '#10B981', // green
                         '#F97316', // orange
-                        '#EAB308', // yellow
-                        '#8B5CF6', // purple
+                        '#A16207', // yellow
+                        '#1E5AA8', // biru
                         '#EF4444' // red
                     ],
                     borderWidth: 0
@@ -1169,7 +1172,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
             // Auto-submit select filters on change for mobile
-            const selectFilters = document.querySelectorAll('select[name="kelas"], select[name="jurusan"], select[name="status"], select[name="siswa_id"]');
+            const selectFilters = document.querySelectorAll('select[name="kelas"], select[name="status"], select[name="siswa_id"]');
             if (window.innerWidth < 768) {
                 selectFilters.forEach(select => {
                     select.addEventListener('change', function() {

@@ -10,17 +10,26 @@ $error = '';
 
 // Process the login form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nis = $_POST['nis'];
-    $password = $_POST['password'];
+    $identifier = trim($_POST['identifier'] ?? '');
+    $password = $_POST['password'] ?? '';
 
     // Validate inputs
-    if (empty($nis) || empty($password)) {
-        $error = 'NIS dan password tidak boleh kosong.';
+    if ($identifier === '' || $password === '') {
+        $error = 'Nama / No HP dan password tidak boleh kosong.';
     } else {
-        // Check the NIS in the database
-        $sql = "SELECT * FROM siswa WHERE nis = :nis";
+        $angka = preg_replace('/\D+/', '', $identifier);
+        $sql = "SELECT * FROM siswa
+                WHERE LOWER(REPLACE(nama_lengkap, ' ', '')) = LOWER(REPLACE(:identifier, ' ', ''))";
+        $params = ['identifier' => $identifier];
+
+        if ($angka !== '') {
+            $sql .= " OR REPLACE(REPLACE(no_hp, ' ', ''), '-', '') = :no_hp";
+            $params['no_hp'] = $angka;
+        }
+
+        $sql .= " LIMIT 1";
         $stmt = $conn->prepare($sql);
-        $stmt->execute(['nis' => $nis]);
+        $stmt->execute($params);
         $siswa = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($siswa) {
@@ -28,11 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($password === $siswa['password']) {
                 // Set session variables
                 $_SESSION['siswa_id'] = $siswa['id'];
-                $_SESSION['siswa_nis'] = $siswa['nis'];
+                $_SESSION['siswa_nis'] = $siswa['nis'] ?? '';
                 $_SESSION['siswa_name'] = $siswa['nama_lengkap'];
                 $_SESSION['siswa_kelas'] = $siswa['kelas'];
                 $_SESSION['siswa_jurusan'] = $siswa['jurusan'];
-                $_SESSION['siswa_email'] = $siswa['email'];
+                $_SESSION['siswa_email'] = $siswa['email'] ?? '';
                 $_SESSION['siswa_photo'] = $siswa['foto_profil'];
 
                 // Record login activity
@@ -51,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Password yang Anda masukkan salah.';
             }
         } else {
-            $error = 'NIS tidak ditemukan.';
+            $error = 'Akun tidak ditemukan.';
         }
     }
 }
@@ -63,14 +72,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Siswa - SMKN 40 Jakarta</title>
+    <title>Login Siswa - Absensi DJKI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?= str_repeat('../', substr_count($_SERVER['PHP_SELF'], '/') - 1) ?>assets/css/theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         .glass-effect {
-            background: rgba(17, 24, 39, 0.7);
+            background: #ffffff;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(147, 51, 234, 0.3);
+            border: 1px solid #BFDBFE;
         }
 
         /* Fix white background in autofill */
@@ -88,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .animated-gradient {
-            background: linear-gradient(-45deg, #6941c6, #9333ea, #4338ca, #7e22ce);
+            background: linear-gradient(-45deg, #2E77BC, #2E77BC, #1E5AA8, #163D73);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
         }
@@ -108,21 +118,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .login-btn {
-            background-image: linear-gradient(to right, #8b5cf6, #6d28d9, #5b21b6);
+            background-image: linear-gradient(to right, #2E77BC, #1E5AA8, #163D73);
             transition: all 0.3s ease;
         }
 
         .login-btn:hover {
-            background-image: linear-gradient(to right, #7c3aed, #6d28d9, #4c1d95);
+            background-image: linear-gradient(to right, #3B82C4, #1E5AA8, #0F2C52);
             transform: translateY(-2px);
             box-shadow: 0 10px 20px -10px rgba(124, 58, 237, 0.6);
         }
     </style>
 </head>
 
-<body class="bg-gray-900 min-h-screen flex items-center justify-center">
-    <!-- Purple Gradient Overlay -->
-    <div class="fixed inset-0 bg-gradient-to-br from-indigo-900/50 to-purple-900/50 pointer-events-none"></div>
+<body class="bg-white min-h-screen flex items-center justify-center">
+    <!-- Overlay gradien biru -->
+    <div class="fixed inset-0 bg-gradient-to-br from-blue-900/40 to-blue-700/10 pointer-events-none"></div>
 
     <!-- Grid Pattern Overlay -->
     <div class="fixed inset-0 opacity-20 pointer-events-none bg-[url('../assets/default/grid-pattern.svg')]"></div>
@@ -131,20 +141,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Login Card -->
         <div class="mb-8 text-center">
             <!-- School Logo -->
-            <img src="../assets/default/logo-smk40.png" alt="SMKN 40 Jakarta"
-                class="h-24 mx-auto drop-shadow-lg">
+            <?= app_logo('../', 'h-24 mx-auto drop-shadow-lg') ?>
 
             <!-- Animated Badge -->
-            <div class="inline-block mt-4 mb-2 animated-gradient text-white py-1 px-4 rounded-full text-xs font-medium tracking-wider">
+            <div class="inline-block mt-4 mb-2 animated-gradient text-gray-900 py-1 px-4 rounded-full text-xs font-medium tracking-wider">
                 SISTEM ABSENSI SISWA
             </div>
 
-            <h2 class="text-3xl font-bold text-white mt-2">Login Siswa</h2>
-            <p class="text-gray-300 mt-2">Masuk ke akun siswa Anda</p>
+            <h2 class="text-3xl font-bold text-gray-900 mt-2">Login Siswa</h2>
+            <p class="text-gray-700 mt-2">Masuk ke akun siswa Anda</p>
         </div>
 
         <!-- Login Form -->
-        <div class="glass-effect rounded-2xl shadow-2xl p-8 border border-purple-500/30 shadow-purple-900/20">
+        <div class="glass-effect rounded-2xl shadow-2xl p-8 border border-blue-200 shadow-yellow-900/20">
             <?php if ($error): ?>
                 <div class="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-3 rounded-lg relative mb-6 flex items-center" role="alert">
                     <i class="fas fa-exclamation-circle mr-2"></i>
@@ -154,59 +163,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form method="POST" class="space-y-6">
                 <div>
-                    <label class="block text-gray-300 text-sm font-medium mb-2">
-                        <i class="fas fa-id-card text-purple-500 mr-2"></i>NIS
+                    <label class="block text-gray-700 text-sm font-medium mb-2">
+                        <i class="fas fa-user text-blue-600 mr-2"></i>Nama Lengkap / No HP
                     </label>
                     <div class="relative">
-                        <input type="text" name="nis"
-                            class="w-full px-4 py-3 rounded-lg bg-gray-800/80 border border-purple-500/30 text-white 
-                            focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 
+                        <input type="text" name="identifier" list="daftar-nama"
+                            class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-blue-200 text-gray-900 
+                            focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-blue-500 
                             transition-all duration-300 placeholder-gray-500"
-                            placeholder="Masukkan NIS" autofocus>
+                            placeholder="Masukkan nama lengkap atau No HP" autofocus>
+                        <datalist id="daftar-nama">
+                            <?php foreach ($conn->query("SELECT nama_lengkap FROM siswa ORDER BY nama_lengkap")->fetchAll(PDO::FETCH_COLUMN) as $nama): ?>
+                                <option value="<?= htmlspecialchars($nama) ?>"></option>
+                            <?php endforeach; ?>
+                        </datalist>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-gray-300 text-sm font-medium mb-2">
-                        <i class="fas fa-lock text-purple-500 mr-2"></i>Password
+                    <label class="block text-gray-700 text-sm font-medium mb-2">
+                        <i class="fas fa-lock text-blue-600 mr-2"></i>Password
                     </label>
                     <div class="relative">
                         <input type="password" name="password" id="password"
-                            class="w-full px-4 py-3 rounded-lg bg-gray-800/80 border border-purple-500/30 text-white 
-                            focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 
+                            class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-blue-200 text-gray-900 
+                            focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-blue-500 
                             transition-all duration-300 placeholder-gray-500"
                             placeholder="Masukkan password">
                         <button type="button" onclick="togglePassword()"
-                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-400 focus:outline-none">
+                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-700 hover:text-blue-600 focus:outline-none">
                             <i class="fas fa-eye text-lg" id="toggleIcon"></i>
                         </button>
                     </div>
-                    <p class="mt-2 text-xs text-gray-500">Default password: siswa_[NIS]</p>
+                    <p class="mt-2 text-xs text-gray-500">Password dibuat oleh pembimbing.</p>
                 </div>
 
                 <button type="submit"
                     class="w-full login-btn text-white font-medium py-3 px-4 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-purple-500/30 flex items-center justify-center
-                    shadow-xl shadow-purple-900/20">
+                    focus:outline-none focus:ring-2 focus:ring-yellow-500/30 flex items-center justify-center
+                    shadow-xl shadow-yellow-900/20">
                     <i class="fas fa-sign-in-alt mr-2"></i>
                     Login
                 </button>
             </form>
 
-            <div class="mt-6 text-center text-sm text-gray-400">
+            <div class="mt-6 text-center text-sm text-gray-700">
                 <p>Tidak bisa login? Silakan hubungi Admin</p>
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="text-center mt-8 text-gray-400 text-sm">
-            <p>&copy; <?= date('Y') ?> SMKN 40 Jakarta</p>
+        <div class="text-center mt-8 text-gray-700 text-sm">
+            <p>&copy; <?= date('Y') ?> Absensi DJKI</p>
             <p class="mt-1 text-gray-500">Sistem Informasi Absensi Siswa</p>
         </div>
 
         <!-- Admin Link -->
         <div class="text-center mt-4">
-            <a href="../admin/login.php" class="text-xs text-purple-400 hover:text-purple-300 transition-colors flex items-center justify-center">
+            <a href="../admin/login.php" class="text-xs text-blue-600 hover:text-blue-600 transition-colors flex items-center justify-center">
                 <i class="fas fa-user-shield mr-1"></i> Admin Login
             </a>
         </div>

@@ -1,0 +1,9 @@
+# Foto unggahan saat aplikasi dipakai, jangan ikut ke repo
+/uploads/bukti/
+/uploads/profile/
+/uploads/siswa/
+
+# Berkas sementara
+*.log
+Thumbs.db
+.DS_Store

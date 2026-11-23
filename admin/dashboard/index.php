@@ -6,6 +6,30 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
+// Jadwal PKL
+$pkl_mulai = get_pengaturan($conn, 'pkl_mulai', '');
+$pkl_selesai = get_pengaturan($conn, 'pkl_selesai', '');
+$pkl_pesan = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_jadwal'])) {
+    $baru_mulai = $_POST['pkl_mulai'] ?? '';
+    $baru_selesai = $_POST['pkl_selesai'] ?? '';
+
+    set_pengaturan($conn, 'pkl_mulai', $baru_mulai);
+    set_pengaturan($conn, 'pkl_selesai', $baru_selesai);
+
+    if ($baru_mulai !== '' && $baru_selesai !== '') {
+        $stmt = $conn->prepare("UPDATE siswa SET pkl_mulai = :mulai, pkl_selesai = :selesai");
+        $stmt->execute(['mulai' => $baru_mulai, 'selesai' => $baru_selesai]);
+        $pkl_pesan = 'Jadwal PKL diperbarui dan diterapkan ke semua siswa.';
+    } else {
+        $pkl_pesan = 'Jadwal PKL disimpan.';
+    }
+
+    $pkl_mulai = $baru_mulai;
+    $pkl_selesai = $baru_selesai;
+}
+
 // Get today's statistics - ADD APPROVAL STATUS FILTER
 $today = date('Y-m-d');
 $yesterday = date('Y-m-d', strtotime('-1 day'));
@@ -113,25 +137,26 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - SMKN 40 Jakarta</title>
+    <title>Dashboard Admin - Absensi DJKI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?= str_repeat('../', substr_count($_SERVER['PHP_SELF'], '/') - 1) ?>assets/css/theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .glass-effect {
-            background: rgba(17, 24, 39, 0.7);
+            background: #ffffff;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(147, 51, 234, 0.3);
+            border: 1px solid #BFDBFE;
         }
 
         .menu-active {
-            background: linear-gradient(to right, rgba(147, 51, 234, 0.2), rgba(147, 51, 234, 0.05));
-            border-left: 4px solid #9333ea;
+            background: linear-gradient(to right, #EFF6FF, #EFF6FF);
+            border-left: 4px solid #2E77BC;
         }
 
         /* Add gradient background */
         body {
-            background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+            background: #F5F7FA;
         }
 
         @keyframes fadeInUp {
@@ -176,16 +201,16 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(31, 41, 55, 0.5);
+            background: #F1F5F9;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(147, 51, 234, 0.5);
+            background: #2E77BC;
             border-radius: 3px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(147, 51, 234, 0.7);
+            background: #1E5AA8;
         }
 
         /* Touch-friendly adjustments */
@@ -207,67 +232,67 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
     </style>
 </head>
 
-<body class="min-h-screen text-white bg-fixed">
+<body class="min-h-screen text-gray-900 bg-fixed">
     <!-- Mobile Overlay - only visible when sidebar is open on mobile -->
-    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-gray-900/40 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
     <!-- Side Navigation -->
-    <aside id="sidebar" class="fixed top-0 left-0 h-screen w-64 glass-effect border-r border-purple-900/30 z-50 sidebar-transition -translate-x-full lg:translate-x-0">
-        <div class="flex items-center justify-between p-4 lg:p-6 border-b border-purple-900/30">
+    <aside id="sidebar" class="fixed top-0 left-0 h-screen w-64 glass-effect border-r border-blue-100 z-50 sidebar-transition -translate-x-full lg:translate-x-0">
+        <div class="flex items-center justify-between p-4 lg:p-6 border-b border-blue-100">
             <div class="flex items-center gap-3">
-                <img src="../../assets/default/logo-smk40.png" alt="SMKN 40" class="h-8 lg:h-10 w-auto">
+                <?= app_logo('../../', 'h-8 lg:h-10 w-auto') ?>
                 <div>
-                    <h1 class="font-semibold text-sm lg:text-base">SMKN 40</h1>
-                    <p class="text-xs text-gray-400">Sistem Absensi</p>
+                    <h1 class="font-semibold text-sm lg:text-base">Absensi DJKI</h1>
+                    <p class="text-xs text-gray-700">Sistem Absensi</p>
                 </div>
             </div>
             <!-- Close sidebar button - only visible on mobile -->
-            <button class="text-gray-400 hover:text-white lg:hidden" onclick="toggleSidebar()">
+            <button class="text-gray-700 hover:text-gray-900 lg:hidden" onclick="toggleSidebar()">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
 
         <nav class="p-4 space-y-2 overflow-y-auto no-scrollbar" style="max-height: calc(100vh - 76px);">
-            <a href="index.php" class="flex items-center gap-3 text-white/90 p-3 rounded-lg menu-active">
-                <i class="fas fa-home text-purple-500"></i>
+            <a href="index.php" class="flex items-center gap-3 text-gray-900 p-3 rounded-lg menu-active">
+                <i class="fas fa-home text-blue-600"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="../absensi/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../absensi/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-calendar-check"></i>
                 <span>Absensi</span>
             </a>
-            <a href="../siswa/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../siswa/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-users"></i>
                 <span>Data Siswa</span>
             </a>
-            <a href="../laporan/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../laporan/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-file-alt"></i>
                 <span>Laporan</span>
             </a>
-            <a href="../profil/" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <a href="../profil/" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-blue-500/10 transition-colors">
                 <i class="fas fa-user-cog"></i>
                 <span>Profil</span>
             </a>
 
-            <hr class="border-gray-700/50 my-4">
+            <hr class="border-gray-200 my-4">
 
             <!-- Quick Stats Section -->
             <div class="px-3 py-2">
-                <h5 class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Info Cepat</h5>
+                <h5 class="text-xs font-medium text-gray-700 uppercase tracking-wider mb-3">Info Cepat</h5>
                 <div class="space-y-3">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="text-gray-400">Total Siswa</span>
-                        <span class="font-medium text-white"><?= $total_students ?></span>
+                        <span class="text-gray-700">Total Siswa</span>
+                        <span class="font-medium text-gray-900"><?= $total_students ?></span>
                     </div>
                     <div class="flex items-center justify-between text-xs">
-                        <span class="text-gray-400">Menunggu Persetujuan</span>
-                        <span class="font-medium <?= $pending > 0 ? 'text-yellow-400' : 'text-green-400' ?>"><?= $pending ?></span>
+                        <span class="text-gray-700">Menunggu Persetujuan</span>
+                        <span class="font-medium <?= $pending > 0 ? 'text-blue-600' : 'text-green-400' ?>"><?= $pending ?></span>
                     </div>
                 </div>
             </div>
 
             <div class="pt-2 mt-auto">
-                <a href="../logout.php" class="flex items-center gap-3 text-gray-400 p-3 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors">
+                <a href="../logout.php" class="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
@@ -276,23 +301,23 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
     </aside>
 
     <!-- Main Content -->
-    <main class="lg:ml-64 min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
+    <main class="lg:ml-64 min-h-screen bg-gradient-to-br from-white to-gray-50">
         <!-- Mobile Header -->
-        <div class="lg:hidden bg-gray-900/60 backdrop-blur-lg sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-purple-900/30">
+        <div class="lg:hidden bg-white/80 backdrop-blur-lg sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-blue-100">
             <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-white p-2 -ml-2 rounded-lg hover:bg-gray-800/60" aria-label="Menu">
+                <button onclick="toggleSidebar()" class="text-gray-900 p-2 -ml-2 rounded-lg hover:bg-gray-50" aria-label="Menu">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
-                <img src="../../assets/default/logo-smk40.png" alt="SMKN 40" class="h-8 w-auto">
+                <?= app_logo('../../', 'h-8 w-auto') ?>
             </div>
             <div class="flex items-center gap-3">
                 <span id="current-time-mobile" class="text-sm font-medium hidden sm:block"></span>
                 <!-- Mobile notification button -->
                 <div class="relative">
-                    <button onclick="toggleNotifications()" class="p-2 rounded-lg hover:bg-gray-800/60" aria-label="Notifications">
-                        <i class="fas fa-bell text-purple-500"></i>
+                    <button onclick="toggleNotifications()" class="p-2 rounded-lg hover:bg-gray-50" aria-label="Notifications">
+                        <i class="fas fa-bell text-blue-600"></i>
                         <?php if (count($notifications) > 0): ?>
-                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center notification-counter">
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-gray-900 text-xs rounded-full h-5 w-5 flex items-center justify-center notification-counter">
                                 <?= count($notifications) ?>
                             </span>
                         <?php endif; ?>
@@ -300,7 +325,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                 </div>
                 <!-- User photo -->
                 <img src="../../<?= $_SESSION['admin_photo'] ?: '../../assets/default/photo-profile.png' ?>"
-                    alt="Admin" class="h-8 w-8 rounded-full object-cover border border-purple-500/50">
+                    alt="Admin" class="h-8 w-8 rounded-full object-cover border border-blue-300">
             </div>
         </div>
 
@@ -310,16 +335,16 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                 <header class="flex flex-wrap justify-between items-center mb-6 lg:mb-8">
                     <div class="w-full sm:w-auto mb-4 sm:mb-0">
                         <h1 class="text-xl md:text-2xl font-bold">Dashboard</h1>
-                        <p class="text-gray-400">Overview sistem absensi</p>
+                        <p class="text-gray-700">Overview sistem absensi</p>
                     </div>
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-4">   
                         <!-- Notification Button - Hidden on mobile since we have it in the header -->
                         <div class="relative hidden lg:block">
                             <button onclick="toggleNotifications()"
-                                class="px-4 py-2 rounded-lg glass-effect hover:bg-purple-500/10 transition-colors">
-                                <i class="fas fa-bell text-purple-500"></i>
+                                class="px-4 py-2 rounded-lg glass-effect hover:bg-blue-500/10 transition-colors">
+                                <i class="fas fa-bell text-blue-600"></i>
                                 <?php if (count($notifications) > 0): ?>
-                                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center notification-counter">
+                                    <span class="absolute -top-1 -right-1 bg-red-500 text-gray-900 text-xs rounded-full h-5 w-5 flex items-center justify-center notification-counter">
                                         <?= count($notifications) ?>
                                     </span>
                                 <?php endif; ?>
@@ -337,7 +362,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                 <div id="notificationPanel"
                     class="hidden fixed lg:absolute right-0 mt-2 w-[95%] sm:w-96 glass-effect rounded-xl shadow-2xl z-50 
                             notification-panel-mobile lg:w-96 lg:right-0 lg:top-auto">
-                    <div class="p-4 border-b border-purple-900/30 flex justify-between items-center">
+                    <div class="p-4 border-b border-blue-100 flex justify-between items-center">
                         <h3 class="font-semibold">Notifikasi Pending</h3>
                         <div class="notification-badge">
                             <?php if (count($notifications) > 0): ?>
@@ -350,7 +375,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                     <div id="notificationList" class="max-h-[60vh] lg:max-h-[480px] overflow-y-auto custom-scrollbar">
                         <?php if (count($notifications) > 0): ?>
                             <?php foreach ($notifications as $notif): ?>
-                                <div class="p-4 border-b border-purple-900/30 hover:bg-purple-500/5 transition-colors notification-item"
+                                <div class="p-4 border-b border-blue-100 hover:bg-blue-500/10 transition-colors notification-item"
                                     data-notif-id="<?= $notif['id'] ?>">
                                     <div class="flex gap-3">
                                         <img src="../../<?= $notif['foto_profil'] ?>"
@@ -358,14 +383,14 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                             alt="<?= htmlspecialchars($notif['nama_lengkap']) ?>">
                                         <div class="flex-1">
                                             <p class="font-medium"><?= htmlspecialchars($notif['nama_lengkap']) ?></p>
-                                            <p class="text-sm text-gray-400 mt-0.5">
+                                            <p class="text-sm text-gray-700 mt-0.5">
                                                 Mengajukan <?= strtolower($notif['status']) ?>
                                                 <span class="text-gray-500">
                                                     • <?= date('H:i', strtotime($notif['created_at'])) ?>
                                                 </span>
                                             </p>
                                             <?php if ($notif['keterangan']): ?>
-                                                <p class="text-sm text-gray-400 mt-1">
+                                                <p class="text-sm text-gray-700 mt-1">
                                                     "<?= htmlspecialchars($notif['keterangan']) ?>"
                                                 </p>
                                             <?php endif; ?>
@@ -391,7 +416,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <div class="p-8 text-center text-gray-400 empty-notification">
+                            <div class="p-8 text-center text-gray-700 empty-notification">
                                 <i class="fas fa-check-circle text-2xl mb-2"></i>
                                 <p class="text-sm">Tidak ada notifikasi pending</p>
                             </div>
@@ -402,10 +427,10 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                 <!-- Statistics Grid - Now responsive with smaller screens support -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-6 md:mb-8">
                     <!-- Hadir Card -->
-                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-purple-900/10 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-green-800/10 cursor-pointer" data-stat="hadir">
+                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-blue-50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-green-800/10 cursor-pointer" data-stat="hadir">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-gray-400 text-sm font-medium mb-1">Total Hadir</p>
+                                <p class="text-gray-700 text-sm font-medium mb-1">Total Hadir</p>
                                 <h3 class="text-2xl font-bold stat-value"><?= $stats['hadir'] ?></h3>
                             </div>
                             <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br from-green-500/30 to-green-700/30 flex items-center justify-center shadow-md">
@@ -427,22 +452,22 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                 </span>
                             <?php else: ?>
                                 <span class="flex items-center">
-                                    <i class="fas fa-minus text-gray-400 mr-1"></i>
-                                    <span class="text-gray-400">Sama dengan kemarin</span>
+                                    <i class="fas fa-minus text-gray-700 mr-1"></i>
+                                    <span class="text-gray-700">Sama dengan kemarin</span>
                                 </span>
                             <?php endif; ?>
                         </div>
                     </div>
 
                     <!-- Sakit Card -->
-                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-purple-900/10 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-800/10 cursor-pointer" data-stat="sakit">
+                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-blue-50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-800/10 cursor-pointer" data-stat="sakit">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-gray-400 text-sm font-medium mb-1">Total Sakit</p>
+                                <p class="text-gray-700 text-sm font-medium mb-1">Total Sakit</p>
                                 <h3 class="text-2xl font-bold stat-value"><?= $stats['sakit'] ?></h3>
                             </div>
-                            <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br from-yellow-500/30 to-yellow-700/30 flex items-center justify-center shadow-md">
-                                <i class="fas fa-hospital text-yellow-400 text-lg"></i>
+                            <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-700/20 flex items-center justify-center shadow-md">
+                                <i class="fas fa-hospital text-blue-600 text-lg"></i>
                             </div>
                         </div>
                         <div class="mt-3 md:mt-4 text-sm stat-change">
@@ -458,22 +483,22 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                 </span>
                             <?php else: ?>
                                 <span class="flex items-center">
-                                    <i class="fas fa-minus text-gray-400 mr-1"></i>
-                                    <span class="text-gray-400">Sama dengan kemarin</span>
+                                    <i class="fas fa-minus text-gray-700 mr-1"></i>
+                                    <span class="text-gray-700">Sama dengan kemarin</span>
                                 </span>
                             <?php endif; ?>
                         </div>
                     </div>
 
                     <!-- Izin Card -->
-                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-purple-900/10 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-800/10 cursor-pointer" data-stat="izin">
+                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-blue-50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-800/10 cursor-pointer" data-stat="izin">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-gray-400 text-sm font-medium mb-1">Total Izin</p>
+                                <p class="text-gray-700 text-sm font-medium mb-1">Total Izin</p>
                                 <h3 class="text-2xl font-bold stat-value"><?= $stats['izin'] ?></h3>
                             </div>
-                            <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br from-purple-500/30 to-purple-700/30 flex items-center justify-center shadow-md">
-                                <i class="fas fa-clipboard-list text-purple-400 text-lg"></i>
+                            <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-800/20 flex items-center justify-center shadow-md">
+                                <i class="fas fa-clipboard-list text-blue-600 text-lg"></i>
                             </div>
                         </div>
                         <div class="mt-3 md:mt-4 text-sm stat-change">
@@ -489,18 +514,18 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                 </span>
                             <?php else: ?>
                                 <span class="flex items-center">
-                                    <i class="fas fa-minus text-gray-400 mr-1"></i>
-                                    <span class="text-gray-400">Sama dengan kemarin</span>
+                                    <i class="fas fa-minus text-gray-700 mr-1"></i>
+                                    <span class="text-gray-700">Sama dengan kemarin</span>
                                 </span>
                             <?php endif; ?>
                         </div>
                     </div>
 
                     <!-- Terlambat Card -->
-                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-purple-900/10 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-orange-800/10 cursor-pointer" data-stat="terlambat">
+                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-blue-50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-orange-800/10 cursor-pointer" data-stat="terlambat">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-gray-400 text-sm font-medium mb-1">Total Terlambat</p>
+                                <p class="text-gray-700 text-sm font-medium mb-1">Total Terlambat</p>
                                 <h3 class="text-2xl font-bold stat-value"><?= $stats['terlambat'] ?></h3>
                             </div>
                             <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br from-orange-500/30 to-orange-700/30 flex items-center justify-center shadow-md">
@@ -520,18 +545,18 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                 </span>
                             <?php else: ?>
                                 <span class="flex items-center">
-                                    <i class="fas fa-minus text-gray-400 mr-1"></i>
-                                    <span class="text-gray-400">Sama dengan kemarin</span>
+                                    <i class="fas fa-minus text-gray-700 mr-1"></i>
+                                    <span class="text-gray-700">Sama dengan kemarin</span>
                                 </span>
                             <?php endif; ?>
                         </div>
                     </div>
 
                     <!-- Alpha Card -->
-                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-purple-900/10 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-red-800/10 cursor-pointer" data-stat="alpha">
+                    <div class="glass-effect rounded-xl p-4 md:p-6 hover:bg-blue-50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-red-800/10 cursor-pointer" data-stat="alpha">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-gray-400 text-sm font-medium mb-1">Total Alpha</p>
+                                <p class="text-gray-700 text-sm font-medium mb-1">Total Alpha</p>
                                 <h3 class="text-2xl font-bold stat-value"><?= $stats['alpha'] ?></h3>
                             </div>
                             <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br from-red-500/30 to-red-700/30 flex items-center justify-center shadow-md">
@@ -551,12 +576,39 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                 </span>
                             <?php else: ?>
                                 <span class="flex items-center">
-                                    <i class="fas fa-minus text-gray-400 mr-1"></i>
-                                    <span class="text-gray-400">Sama dengan kemarin</span>
+                                    <i class="fas fa-minus text-gray-700 mr-1"></i>
+                                    <span class="text-gray-700">Sama dengan kemarin</span>
                                 </span>
                             <?php endif; ?>
                         </div>
                     </div>
+                </div>
+
+                <!-- Jadwal PKL -->
+                <div class="glass-effect rounded-xl p-4 md:p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-3 md:mb-4">Jadwal PKL</h3>
+                    <?php if ($pkl_pesan): ?>
+                        <p class="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-4"><?= htmlspecialchars($pkl_pesan) ?></p>
+                    <?php endif; ?>
+                    <form method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <input type="hidden" name="simpan_jadwal" value="1">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1" for="pkl_mulai">Mulai</label>
+                            <input type="date" id="pkl_mulai" name="pkl_mulai" value="<?= htmlspecialchars($pkl_mulai) ?>"
+                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1" for="pkl_selesai">Selesai</label>
+                            <input type="date" id="pkl_selesai" name="pkl_selesai" value="<?= htmlspecialchars($pkl_selesai) ?>"
+                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="sm:col-span-2 flex justify-end">
+                            <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+                                <i class="fas fa-save mr-2"></i>Simpan & Terapkan
+                            </button>
+                        </div>
+                    </form>
+                    <p class="text-xs text-gray-500 mt-2">Perubahan diterapkan ke semua siswa, termasuk reschedule dari sekolah.</p>
                 </div>
 
                 <!-- Charts & Activities Grid - Now responsive -->
@@ -575,34 +627,34 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
 
                     <!-- Recent Activities - Now fully responsive -->
                     <div class="glass-effect rounded-xl overflow-hidden">
-                        <div class="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 p-4 border-b border-gray-800/50">
+                        <div class="bg-gradient-to-r from-blue-600/15 to-blue-500/5 p-4 border-b border-gray-200">
                             <h3 class="text-lg font-semibold flex items-center">
-                                <i class="fas fa-history text-purple-400 mr-2"></i>
+                                <i class="fas fa-history text-blue-600 mr-2"></i>
                                 Aktivitas Terkini
                             </h3>
                         </div>
 
                         <!-- Activities list with improved spacing -->
-                        <div class="divide-y divide-gray-800/50 max-h-[300px] md:max-h-[440px] overflow-y-auto custom-scrollbar">
+                        <div class="divide-y divide-gray-200 max-h-[300px] md:max-h-[440px] overflow-y-auto custom-scrollbar">
                             <?php foreach ($activities as $index => $activity): ?>
-                                <div class="p-4 hover:bg-purple-500/5 transition-colors">
+                                <div class="p-4 hover:bg-blue-500/10 transition-colors">
                                     <div class="flex gap-3">
                                         <!-- User Avatar with Activity Type Indicator -->
                                         <div class="shrink-0">
                                             <div class="relative">
                                                 <img src="../../<?= $activity['user_photo'] ?>" alt="User"
-                                                    class="h-10 w-10 rounded-full object-cover border-2 border-purple-500/20 shadow-md">
+                                                    class="h-10 w-10 rounded-full object-cover border-2 border-blue-200 shadow-md">
                                                 <?php
                                                 $activityTypeIcons = [
                                                     'login' => 'fa-sign-in-alt bg-green-500/20 text-green-400',
                                                     'logout' => 'fa-sign-out-alt bg-orange-500/20 text-orange-400',
-                                                    'create' => 'fa-plus bg-blue-500/20 text-blue-400',
-                                                    'update' => 'fa-pen bg-yellow-500/20 text-yellow-400',
+                                                    'create' => 'fa-plus bg-blue-500/20 text-blue-600',
+                                                    'update' => 'fa-pen bg-blue-500/15 text-blue-600',
                                                     'delete' => 'fa-trash bg-red-500/20 text-red-400',
-                                                    'approval' => 'fa-check-circle bg-purple-500/20 text-purple-400',
+                                                    'approval' => 'fa-check-circle bg-blue-500/15 text-blue-600',
                                                 ];
 
-                                                $iconClass = $activityTypeIcons[$activity['activity_type']] ?? 'fa-circle bg-gray-500/20 text-gray-400';
+                                                $iconClass = $activityTypeIcons[$activity['activity_type']] ?? 'fa-circle bg-gray-100 text-gray-700';
                                                 ?>
                                                 <span class="absolute -bottom-1 -right-1 rounded-full p-1 <?= explode(' ', $iconClass)[1] ?>">
                                                     <i class="fas <?= explode(' ', $iconClass)[0] ?> text-xs <?= explode(' ', $iconClass)[2] ?>"></i>
@@ -614,11 +666,11 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                         <div class="flex-1">
                                             <div class="flex items-start justify-between">
                                                 <!-- Activity Description -->
-                                                <p class="text-gray-200 text-sm pr-8"><?= htmlspecialchars($activity['description']) ?></p>
+                                                <p class="text-gray-700 text-sm pr-8"><?= htmlspecialchars($activity['description']) ?></p>
 
                                                 <!-- "New" Badge - Only for first item -->
                                                 <?php if ($index === 0): ?>
-                                                    <span class="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded border border-purple-500/20 ml-2 shrink-0">
+                                                    <span class="px-1.5 py-0.5 bg-blue-500/15 text-blue-600 text-xs rounded border border-blue-200 ml-2 shrink-0">
                                                         Baru
                                                     </span>
                                                 <?php endif; ?>
@@ -626,7 +678,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
 
                                             <!-- User Name and Time -->
                                             <div class="flex justify-between items-center mt-2">
-                                                <p class="text-purple-400 text-xs font-medium"><?= htmlspecialchars($activity['user_name']) ?></p>
+                                                <p class="text-blue-600 text-xs font-medium"><?= htmlspecialchars($activity['user_name']) ?></p>
                                                 <div class="flex items-center text-gray-500 text-xs">
                                                     <i class="fas fa-clock mr-1 text-gray-500"></i>
                                                     <?= $activity['time'] ?>
@@ -638,7 +690,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                             <?php endforeach; ?>
 
                             <?php if (empty($activities)): ?>
-                                <div class="p-8 text-center text-gray-400">
+                                <div class="p-8 text-center text-gray-700">
                                     <i class="fas fa-history text-4xl mb-3 opacity-30"></i>
                                     <p>Belum ada aktivitas</p>
                                 </div>
@@ -650,7 +702,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                 <!-- Additional Statistics - Improved UI and made responsive -->
                 <div class="mt-6">
                     <h3 class="text-lg font-semibold mb-4 flex items-center">
-                        <i class="fas fa-chart-bar text-purple-500 mr-2"></i>
+                        <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
                         Statistik Bulanan
                     </h3>
                     <div class="glass-effect rounded-xl p-4 md:p-6">
@@ -734,8 +786,8 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
 
             const statusColors = {
                 'Hadir': '#10B981',
-                'Sakit': '#EAB308',
-                'Izin': '#8B5CF6',
+                'Sakit': '#A16207',
+                'Izin': '#1E5AA8',
                 'Terlambat': '#F97316',
                 'Alpha': '#EF4444'
             };
@@ -776,7 +828,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                         y: {
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
+                                color: 'rgba(15, 23, 42, 0.08)'
                             },
                             ticks: {
                                 color: '#9CA3AF',
@@ -787,7 +839,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                         },
                         x: {
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
+                                color: 'rgba(15, 23, 42, 0.08)'
                             },
                             ticks: {
                                 color: '#9CA3AF',
@@ -809,11 +861,11 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                             }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
+                            backgroundColor: '#ffffff',
+                            titleColor: '#1F2A44',
+                            bodyColor: '#1F2A44',
                             padding: 12,
-                            borderColor: 'rgba(147, 51, 234, 0.3)',
+                            borderColor: '#BFDBFE',
                             borderWidth: 1,
                             displayColors: true,
                             usePointStyle: true
@@ -860,8 +912,8 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                             datasets: [{
                                 label: 'Kehadiran',
                                 data: data,
-                                backgroundColor: 'rgba(147, 51, 234, 0.2)', // Purple theme
-                                borderColor: 'rgba(147, 51, 234, 1)',
+                                backgroundColor: '#EFF6FF', // tema biru
+                                borderColor: '#2E77BC',
                                 borderWidth: 2,
                                 borderRadius: 4, // Rounded bars
                                 barThickness: 18, // Consistent bar width
@@ -883,7 +935,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                 y: {
                                     beginAtZero: true,
                                     grid: {
-                                        color: 'rgba(255, 255, 255, 0.1)'
+                                        color: 'rgba(15, 23, 42, 0.08)'
                                     },
                                     ticks: {
                                         color: '#9CA3AF',
@@ -913,11 +965,11 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                     display: false
                                 },
                                 tooltip: {
-                                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                                    titleColor: '#fff',
-                                    bodyColor: '#fff',
+                                    backgroundColor: '#ffffff',
+                                    titleColor: '#1F2A44',
+                                    bodyColor: '#1F2A44',
                                     padding: 12,
-                                    borderColor: 'rgba(147, 51, 234, 0.3)',
+                                    borderColor: '#BFDBFE',
                                     borderWidth: 1,
                                     callbacks: {
                                         label: function(context) {
@@ -950,8 +1002,8 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                             datasets: [{
                                 label: 'Kehadiran',
                                 data: fallbackData,
-                                backgroundColor: 'rgba(147, 51, 234, 0.2)',
-                                borderColor: 'rgba(147, 51, 234, 1)',
+                                backgroundColor: '#EFF6FF',
+                                borderColor: '#2E77BC',
                                 borderWidth: 2,
                                 borderRadius: 4,
                                 barThickness: 18,
@@ -965,7 +1017,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                 y: {
                                     beginAtZero: true,
                                     grid: {
-                                        color: 'rgba(255, 255, 255, 0.1)'
+                                        color: 'rgba(15, 23, 42, 0.08)'
                                     },
                                     ticks: {
                                         color: '#9CA3AF',
@@ -989,7 +1041,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                                     display: false
                                 },
                                 tooltip: {
-                                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                                    backgroundColor: '#ffffff',
                                     callbacks: {
                                         label: function(context) {
                                             return `Kehadiran: ${context.parsed.y}%`;
@@ -1127,7 +1179,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                 // Show empty state if not already present
                 if (!document.querySelector('.empty-notification')) {
                     notificationList.innerHTML = `
-                <div class="p-8 text-center text-gray-400 empty-notification">
+                <div class="p-8 text-center text-gray-700 empty-notification">
                     <i class="fas fa-check-circle text-2xl mb-2"></i>
                     <p class="text-sm">Tidak ada notifikasi pending</p>
                 </div>
@@ -1140,7 +1192,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
                 } else {
                     const bellBtn = document.querySelector('button[onclick="toggleNotifications()"]');
                     const newCounter = document.createElement('span');
-                    newCounter.className = 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center notification-counter';
+                    newCounter.className = 'absolute -top-1 -right-1 bg-red-500 text-gray-900 text-xs rounded-full h-5 w-5 flex items-center justify-center notification-counter';
                     newCounter.textContent = remainingCount;
                     bellBtn.appendChild(newCounter);
                 }
@@ -1162,7 +1214,7 @@ $total_students = $conn->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
             const toast = document.createElement('div');
             toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg glass-effect 
           border border-${type === 'success' ? 'green' : 'red'}-500/30 
-          text-white z-50 animate-fade-in-up`;
+          text-gray-900 z-50 animate-fade-in-up`;
             toast.innerHTML = `
         <i class="fas fa-${type === 'success' ? 'check' : 'times'} 
            text-${type === 'success' ? 'green' : 'red'}-500 mr-2"></i>

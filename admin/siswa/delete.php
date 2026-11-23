@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
             $stmt->execute(['id' => $id]);
 
             // Log activity
-            $description = "Admin menghapus data siswa: " . $siswa['nama_lengkap'] . " (" . $siswa['nis'] . ")";
+            $description = "Admin menghapus data siswa: " . $siswa['nama_lengkap'] . " (" . $siswa['nis'] ?? '' . ")";
 
             $sql = "INSERT INTO activity_log (user_type, user_id, activity_type, description) 
                     VALUES ('admin', :admin_id, 'delete', :description)";

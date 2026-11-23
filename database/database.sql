@@ -240,9 +240,10 @@ INSERT INTO `activity_log` (`id`, `user_type`, `user_id`, `activity_type`, `desc
 CREATE TABLE `admin` (
   `id` int NOT NULL,
   `username` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
-  `email` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `nama_lengkap` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `no_hp` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `foto_profil` varchar(255) COLLATE utf8mb4_general_ci DEFAULT 'assets/default/photo-profile.png',
   `last_login` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -264,11 +265,17 @@ INSERT INTO `admin` (`id`, `username`, `email`, `password`, `nama_lengkap`, `fot
 
 CREATE TABLE `siswa` (
   `id` int NOT NULL,
-  `nis` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `nis` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `nama_lengkap` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `kelas` enum('10','11','12') COLLATE utf8mb4_general_ci NOT NULL,
-  `jurusan` enum('RPL','DKV','AK','BR','MP') COLLATE utf8mb4_general_ci NOT NULL,
-  `email` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `kelas` varchar(30) COLLATE utf8mb4_general_ci NOT NULL,
+  `sekolah` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `jurusan` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `jenis` enum('smk','mahasiswa') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'smk',
+  `jenis_kelamin` enum('L','P') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `no_hp` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pkl_mulai` date DEFAULT NULL,
+  `pkl_selesai` date DEFAULT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `foto_profil` varchar(255) COLLATE utf8mb4_general_ci DEFAULT 'assets/default/photo-profile.png',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -370,4 +377,19 @@ ALTER TABLE `siswa`
 --
 ALTER TABLE `absensi`
   ADD CONSTRAINT `fk_absensi_siswa` FOREIGN KEY (`siswa_id`) REFERENCES `siswa` (`id`) ON DELETE CASCADE;
+
+--
+-- Table structure for table `pengaturan`
+--
+
+CREATE TABLE IF NOT EXISTS `pengaturan` (
+  `kunci` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `nilai` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`kunci`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `pengaturan` (`kunci`, `nilai`) VALUES
+  ('pkl_mulai', NULL),
+  ('pkl_selesai', NULL);
+
 COMMIT;
