@@ -19,7 +19,7 @@ $siswa_id = $_GET['siswa_id'] ?? '';
 $status = $_GET['status'] ?? '';
 
 // Prepare base query for attendance data
-$sql = "SELECT s.id as siswa_id, s.nama_lengkap, s.nis, s.kelas, s.jurusan, 
+$sql = "SELECT s.id as siswa_id, s.nama_lengkap, s.no_hp, s.kelas, s.jurusan,
         COUNT(CASE WHEN a.status = 'Hadir' THEN 1 END) as hadir,
         COUNT(CASE WHEN a.status = 'Sakit' THEN 1 END) as sakit,
         COUNT(CASE WHEN a.status = 'Izin' THEN 1 END) as izin,
@@ -30,7 +30,7 @@ $sql = "SELECT s.id as siswa_id, s.nama_lengkap, s.nis, s.kelas, s.jurusan,
         LEFT JOIN absensi a ON s.id = a.siswa_id 
             AND a.tanggal BETWEEN :start_date AND :end_date 
             AND a.approval_status = 'Approved'
-        GROUP BY s.id, s.nama_lengkap, s.nis, s.kelas, s.jurusan";
+        GROUP BY s.id, s.nama_lengkap, s.no_hp, s.kelas, s.jurusan";
 
 $params = [
     'start_date' => $start_date,
@@ -166,7 +166,7 @@ foreach ($daily_data as $row) {
 sort($chart_statuses);
 
 // Get list of all students for the dropdown filter
-$student_sql = "SELECT id, nis, nama_lengkap, kelas, jurusan FROM siswa ORDER BY nama_lengkap";
+$student_sql = "SELECT id, no_hp, nama_lengkap, kelas, jurusan FROM siswa ORDER BY nama_lengkap";
 $student_stmt = $conn->query($student_sql);
 $student_list = $student_stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -180,7 +180,7 @@ $sort_column = $_GET['sort'] ?? 'tanggal';
 $sort_order = $_GET['order'] ?? 'DESC';
 
 // Validate sort column
-$valid_columns = ['tanggal', 'nama_lengkap', 'nis', 'kelas', 'jurusan', 'status'];
+$valid_columns = ['tanggal', 'nama_lengkap', 'no_hp', 'kelas', 'jurusan', 'status'];
 $sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 'tanggal';
 
 // Add table prefix for sorting
@@ -202,7 +202,7 @@ if ($sort_column == 'tanggal') {
 $sql .= " LIMIT :offset, :limit";
 
 // Get total count for pagination
-$count_sql = str_replace("SELECT a.*, s.nama_lengkap, s.nis, s.kelas, s.jurusan", "SELECT COUNT(*) as total", $sql);
+$count_sql = str_replace("SELECT a.*, s.nama_lengkap, s.no_hp, s.kelas, s.jurusan", "SELECT COUNT(*) as total", $sql);
 $count_sql = preg_replace("/LIMIT :offset, :limit/", "", $count_sql);
 
 $count_stmt = $conn->prepare($count_sql);
@@ -255,7 +255,7 @@ $status_colors = [
 
 // Get detailed attendance data with pagination - using a separate query for the detail table
 $detail_sql = "SELECT a.id, a.tanggal, a.jam_masuk, a.status, a.approval_status, 
-               s.id as siswa_id, s.nama_lengkap, s.nis, s.kelas, s.jurusan, s.foto_profil 
+               s.id as siswa_id, s.nama_lengkap, s.no_hp, s.kelas, s.jurusan, s.foto_profil
                FROM absensi a
                JOIN siswa s ON a.siswa_id = s.id 
                WHERE a.tanggal BETWEEN :start_date AND :end_date
@@ -652,7 +652,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <option value="">Semua Siswa</option>
                                             <?php foreach ($student_list as $student): ?>
                                                 <option value="<?= $student['id'] ?>" <?= $siswa_id == $student['id'] ? 'selected' : '' ?>>
-                                                    <?= htmlspecialchars($student['nama_lengkap']) ?> (<?= $student['nis'] ?? '' ?>)
+                                                    <?= htmlspecialchars($student['nama_lengkap']) ?> (<?= !empty($student['no_hp']) ? htmlspecialchars($student['no_hp']) : '-' ?>)
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
@@ -800,9 +800,9 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </a>
                                         </th>
                                         <th class="px-6 py-3 text-xs font-medium">
-                                            <a href="<?= buildUrl(null, 'nis', $sort_column == 'nis' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-gray-900">
-                                                NIS
-                                                <?= getSortIcon('nis', $sort_column, $sort_order) ?>
+                                            <a href="<?= buildUrl(null, 'no_hp', $sort_column == 'no_hp' && $sort_order == 'ASC' ? 'DESC' : 'ASC') ?>" class="flex items-center gap-1 hover:text-gray-900">
+                                                No HP
+                                                <?= getSortIcon('no_hp', $sort_column, $sort_order) ?>
                                             </a>
                                         </th>
                                         <th class="px-6 py-3 text-xs font-medium">
@@ -833,7 +833,7 @@ $detail_records = $detail_stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <td class="px-6 py-4 text-sm">
                                                 <?= date('d/m/Y', strtotime($data['tanggal'])) ?>
                                             </td>
-                                            <td class="px-6 py-4 text-sm"><?= htmlspecialchars($data['nis'] ?? '') ?></td>
+                                            <td class="px-6 py-4 text-sm"><?= htmlspecialchars($data['no_hp'] ?? '-') ?></td>
                                             <td class="px-6 py-4 text-sm">
                                                 <div class="flex items-center">
                                                     <img src="../../<?= $data['foto_profil'] ?: 'assets/default/avatar.png' ?>"

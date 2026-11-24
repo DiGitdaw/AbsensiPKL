@@ -26,7 +26,7 @@ $format = $_GET['format'] ?? 'pdf'; // Default format is PDF
 
 // Base query for fetching attendance data
 $sql = "SELECT a.id, a.tanggal, a.jam_masuk, a.status, a.keterangan, a.approval_status, 
-         s.nama_lengkap, s.nis, s.kelas, s.jurusan 
+         s.nama_lengkap, s.no_hp, s.kelas, s.jurusan
         FROM absensi a
         JOIN siswa s ON a.siswa_id = s.id
         WHERE a.tanggal BETWEEN :start_date AND :end_date";
@@ -123,12 +123,15 @@ if ($jurusan) {
 }
 
 if ($siswa_id) {
-    $student_sql = "SELECT nama_lengkap, nis FROM siswa WHERE id = :id";
+    $student_sql = "SELECT nama_lengkap, no_hp FROM siswa WHERE id = :id";
     $student_stmt = $conn->prepare($student_sql);
     $student_stmt->execute(['id' => $siswa_id]);
     $student = $student_stmt->fetch(PDO::FETCH_ASSOC);
     if ($student) {
-        $subtitle .= " | Siswa: " . $student['nama_lengkap'] . " (" . $student['nis'] ?? '' . ")";
+        $subtitle .= " | Siswa: " . $student['nama_lengkap'];
+        if (!empty($student['no_hp'])) {
+            $subtitle .= " (" . $student['no_hp'] . ")";
+        }
     }
 }
 
@@ -348,7 +351,7 @@ if ($format === 'excel') {
     $row += 2;
 
     // Add table headers with improved styling
-    $headers = ['No', 'Tanggal', 'NIS', 'Nama Siswa', 'Kelas', 'Jam Masuk', 'Status'];
+    $headers = ['No', 'Tanggal', 'No HP', 'Nama Siswa', 'Kelas', 'Jam Masuk', 'Status'];
     foreach ($headers as $index => $header) {
         $sheet->setCellValue(chr(65 + $index) . $row, $header);
     }
@@ -381,7 +384,7 @@ if ($format === 'excel') {
     foreach ($data as $key => $record) {
         $sheet->setCellValue('A' . $row, $key + 1);
         $sheet->setCellValue('B' . $row, date('d-m-Y', strtotime($record['tanggal'])));
-        $sheet->setCellValue('C' . $row, $record['nis'] ?? '');
+        $sheet->setCellValue('C' . $row, $record['no_hp'] ?? '');
         $sheet->setCellValue('D' . $row, $record['nama_lengkap']);
         $sheet->setCellValue('E' . $row, $record['kelas'] . ' ' . jurusan_label($record['jurusan']));
         $jam_masuk = $record['jam_masuk'] ?? '';
@@ -394,7 +397,7 @@ if ($format === 'excel') {
     // Set column widths for better readability
     $sheet->getColumnDimension('A')->setWidth(6);  // No
     $sheet->getColumnDimension('B')->setWidth(15); // Tanggal
-    $sheet->getColumnDimension('C')->setWidth(15); // NIS
+    $sheet->getColumnDimension('C')->setWidth(18); // No HP
     $sheet->getColumnDimension('D')->setWidth(30); // Nama
     $sheet->getColumnDimension('E')->setWidth(15); // Kelas
     $sheet->getColumnDimension('F')->setWidth(15); // Jam Masuk
@@ -720,7 +723,7 @@ if ($format === 'excel') {
                 <tr>
                     <th>No</th>
                     <th>Tanggal</th>
-                    <th>NIS</th>
+                    <th>No HP</th>
                     <th>Nama</th>
                     <th>Kelas</th>
                     <th>Jam Masuk</th>
@@ -737,7 +740,7 @@ if ($format === 'excel') {
                 <tr>
                     <td class="text-center">' . $no . '</td>
                     <td class="text-center">' . date('d/m/Y', strtotime($row['tanggal'])) . '</td>
-                    <td>' . $row['nis'] ?? '' . '</td>
+                    <td>' . ($row['no_hp'] ?? '') . '</td>
                     <td>' . htmlspecialchars($row['nama_lengkap']) . '</td>
                     <td class="text-center">' . htmlspecialchars($row['kelas'] . ' ' . jurusan_label($row['jurusan'])) . '</td>
                     <td class="text-center">' . $jam . '</td>

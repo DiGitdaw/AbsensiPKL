@@ -17,7 +17,7 @@ $error = '';
 $success = false;
 
 // Get absensi data
-$sql = "SELECT a.*, s.nama_lengkap, s.nis 
+$sql = "SELECT a.*, s.nama_lengkap, s.no_hp
         FROM absensi a
         JOIN siswa s ON a.siswa_id = s.id
         WHERE a.id = :id";
@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $success = true;
 
         // Refresh data after update
-        $stmt = $conn->prepare("SELECT a.*, s.nama_lengkap, s.nis 
+        $stmt = $conn->prepare("SELECT a.*, s.nama_lengkap, s.no_hp
                                 FROM absensi a
                                 JOIN siswa s ON a.siswa_id = s.id
                                 WHERE a.id = :id");
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Get all students for the dropdown
-$sql = "SELECT id, nama_lengkap, nis FROM siswa ORDER BY nama_lengkap";
+$sql = "SELECT id, nama_lengkap, no_hp FROM siswa ORDER BY nama_lengkap";
 $siswa_list = $conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -310,7 +310,7 @@ $siswa_list = $conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
                         <!-- Student Info - Improved for mobile -->
                         <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                             <p class="text-sm text-gray-700 mb-1">Data Siswa:</p>
-                            <p class="text-base md:text-lg font-medium break-words"><?= htmlspecialchars($absensi['nama_lengkap']) ?> (<?= htmlspecialchars($absensi['nis'] ?? '') ?>)</p>
+                            <p class="text-base md:text-lg font-medium break-words"><?= htmlspecialchars($absensi['nama_lengkap']) ?> (<?= !empty($absensi['no_hp']) ? htmlspecialchars($absensi['no_hp']) : '-' ?>)</p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">

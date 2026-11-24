@@ -31,6 +31,21 @@ $val_jurusan = $_POST['jurusan'] ?? ($last_input['jurusan'] ?? '');
 $val_pkl_mulai = $_POST['pkl_mulai'] ?? ($last_input['pkl_mulai'] ?? $default_pkl_mulai);
 $val_pkl_selesai = $_POST['pkl_selesai'] ?? ($last_input['pkl_selesai'] ?? $default_pkl_selesai);
 
+// Pilihan kelas dipisah per jenis, lalu dicocokkan tanpa peduli huruf besar
+$kelas_smk = kelas_options($conn, 'smk');
+$kelas_mahasiswa = kelas_options($conn, 'mahasiswa');
+$kelas_terpilih = '';
+foreach (array_merge($kelas_smk, $kelas_mahasiswa) as $option) {
+    if ($val_kelas !== '' && strcasecmp($option, $val_kelas) === 0) {
+        $kelas_terpilih = $option;
+        break;
+    }
+}
+$kelas_dikenal = $kelas_terpilih !== '';
+if ($kelas_terpilih !== '' && $kelas_terpilih !== $val_kelas) {
+    $val_kelas = $kelas_terpilih;
+}
+
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -305,16 +320,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flex-direction: column;
             gap: 2px;
             padding: 0.75rem 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.10);
+            border: 1px solid #E5E7EB;
             border-radius: 0.75rem;
-            background: rgba(255, 255, 255, 0.03);
+            background: #F9FAFB;
             cursor: pointer;
-            transition: border-color 0.15s ease, background 0.15s ease;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
             min-height: 44px;
         }
 
         .pick-card:hover {
-            border-color: rgba(46, 119, 188, 0.35);
+            border-color: rgba(46, 119, 188, 0.45);
+            background: #F3F7FC;
         }
 
         .pick-card:has(input:checked) {
@@ -331,17 +347,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .pick-title {
             font-weight: 600;
-            color: #fff;
+            color: #111827;
         }
 
         .pick-sub {
             font-size: 0.75rem;
-            color: #9ca3af;
+            color: #6B7280;
         }
 
         .pick-inline {
             flex-direction: row;
             align-items: center;
+            gap: 0.5rem;
         }
     </style>
 </head>
@@ -460,12 +477,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="grid grid-cols-2 gap-3">
                                 <label class="pick-card">
                                     <input type="radio" name="jenis" value="smk" checked>
-                                    <span class="pick-title">SMK</span>
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-school text-blue-600"></i>
+                                        <span class="pick-title">SMK</span>
+                                    </span>
                                     <span class="pick-sub">Siswa sekolah</span>
                                 </label>
                                 <label class="pick-card">
                                     <input type="radio" name="jenis" value="mahasiswa">
-                                    <span class="pick-title">Mahasiswa</span>
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-university text-blue-600"></i>
+                                        <span class="pick-title">Mahasiswa</span>
+                                    </span>
                                     <span class="pick-sub">Peserta magang / PKL</span>
                                 </label>
                             </div>
@@ -501,10 +524,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <select id="kelas_pilihan" name="kelas_pilihan"
                                     class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
                                     <option value="">Pilih kelas</option>
-                                    <?php foreach (array_merge(kelas_options($conn, 'smk'), kelas_options($conn, 'mahasiswa')) as $option): ?>
-                                        <option value="<?= htmlspecialchars($option) ?>" <?= $val_kelas === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
-                                    <?php endforeach; ?>
-                                    <option value="lainnya" <?= ($val_kelas !== '' && !in_array($val_kelas, array_merge(kelas_options($conn, 'smk'), kelas_options($conn, 'mahasiswa')), true)) ? 'selected' : '' ?>>Lainnya...</option>
+                                    <?php if (!empty($kelas_smk)): ?>
+                                        <optgroup label="SMK">
+                                            <?php foreach ($kelas_smk as $option): ?>
+                                                <option value="<?= htmlspecialchars($option) ?>" <?= $kelas_terpilih === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                    <?php if (!empty($kelas_mahasiswa)): ?>
+                                        <optgroup label="Mahasiswa">
+                                            <?php foreach ($kelas_mahasiswa as $option): ?>
+                                                <option value="<?= htmlspecialchars($option) ?>" <?= $kelas_terpilih === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                    <option value="lainnya" <?= ($val_kelas !== '' && !$kelas_dikenal) ? 'selected' : '' ?>>Lainnya...</option>
                                 </select>
                                 <input type="text" id="kelas_custom" name="kelas_custom" maxlength="30" placeholder="Ketik kelas"
                                     class="hidden mt-2 w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
@@ -531,10 +565,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="grid grid-cols-2 gap-3">
                                     <label class="pick-card pick-inline">
                                         <input type="radio" name="jenis_kelamin" value="L">
+                                        <i class="fas fa-mars text-blue-600"></i>
                                         <span class="pick-title">Laki-laki</span>
                                     </label>
                                     <label class="pick-card pick-inline">
                                         <input type="radio" name="jenis_kelamin" value="P">
+                                        <i class="fas fa-venus text-blue-600"></i>
                                         <span class="pick-title">Perempuan</span>
                                     </label>
                                 </div>
@@ -551,7 +587,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="mb-2 md:mb-0">
                                 <label for="password" class="block text-sm text-gray-700 mb-2">Password</label>
                                 <div class="relative">
-                                    <input type="password" id="password" name="password" required
+                                    <input type="password" id="password" name="password" required autocomplete="new-password" spellcheck="false"
                                         placeholder="Buat password untuk siswa"
                                         class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 pr-10 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
                                     <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 w-8 h-8 flex items-center justify-center">
@@ -705,20 +741,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const select = document.getElementById(selectId);
             const custom = document.getElementById(customId);
 
-            function apply() {
+            function apply(focus) {
                 const lainnya = select.value === 'lainnya';
                 custom.classList.toggle('hidden', !lainnya);
-                if (lainnya) custom.focus();
+                if (lainnya && focus) custom.focus();
             }
 
-            select.addEventListener('change', apply);
+            select.addEventListener('change', function () { apply(true); });
 
             if (prefill && prefill !== '') {
-                const ada = Array.from(select.options).some(o => o.value === prefill);
-                select.value = ada ? prefill : 'lainnya';
-                if (!ada) custom.value = prefill;
+                const cocok = Array.from(select.options).find(function (o) {
+                    return o.value.toLowerCase() === String(prefill).toLowerCase();
+                });
+
+                if (cocok) {
+                    select.value = cocok.value;
+                } else {
+                    select.value = 'lainnya';
+                    custom.value = prefill;
+                }
             }
-            apply();
+            apply(false);
         }
 
         setupCustom('kelas_pilihan', 'kelas_custom', <?= json_encode($val_kelas) ?>);

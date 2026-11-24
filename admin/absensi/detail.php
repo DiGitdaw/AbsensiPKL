@@ -15,7 +15,7 @@ if (!isset($_GET['id'])) {
 $id = $_GET['id'];
 
 // Get detailed attendance information
-$sql = "SELECT a.*, s.nama_lengkap, s.nis, s.kelas, s.jurusan, s.foto_profil, s.email
+$sql = "SELECT a.*, s.nama_lengkap, s.no_hp, s.sekolah, s.kelas, s.jurusan, s.foto_profil
         FROM absensi a
         JOIN siswa s ON a.siswa_id = s.id
         WHERE a.id = :id";
@@ -275,16 +275,16 @@ $approval_color = $approval_colors[$absensi['approval_status']] ?? 'gray';
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mt-2 md:mt-3">
                                 <div>
-                                    <p class="text-gray-700 text-xs">NIS</p>
-                                    <p class="text-sm md:text-base"><?= htmlspecialchars($absensi['nis'] ?? '') ?></p>
+                                    <p class="text-gray-700 text-xs">No HP</p>
+                                    <p class="text-sm md:text-base"><?= htmlspecialchars($absensi['no_hp'] ?? '') !== '' ? htmlspecialchars($absensi['no_hp']) : '-' ?></p>
                                 </div>
                                 <div>
                                     <p class="text-gray-700 text-xs">Kelas</p>
-                                    <p class="text-sm md:text-base"><?= htmlspecialchars($absensi['kelas']) ?> <?= htmlspecialchars($absensi['jurusan']) ?></p>
+                                    <p class="text-sm md:text-base"><?= htmlspecialchars($absensi['kelas']) ?> <?= htmlspecialchars(jurusan_label($absensi['jurusan'])) ?></p>
                                 </div>
                                 <div class="sm:col-span-2">
-                                    <p class="text-gray-700 text-xs">Email</p>
-                                    <p class="text-sm md:text-base truncate"><?= htmlspecialchars($absensi['email'] ?? '') ?></p>
+                                    <p class="text-gray-700 text-xs">Sekolah</p>
+                                    <p class="text-sm md:text-base truncate"><?= htmlspecialchars($absensi['sekolah'] ?? '') !== '' ? htmlspecialchars($absensi['sekolah']) : '-' ?></p>
                                 </div>
                             </div>
                         </div>

@@ -30,12 +30,12 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $items_per_page;
 
 // Sorting parameters
-$sort_column = $_GET['sort'] ?? 'nis';
+$sort_column = $_GET['sort'] ?? 'nama_lengkap';
 $sort_order = $_GET['order'] ?? 'ASC';
 
 // Validate sort column to prevent SQL injection
-$valid_columns = ['nis', 'nama_lengkap', 'kelas', 'jurusan', 'email', 'created_at'];
-$sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 'nis';
+$valid_columns = ['nama_lengkap', 'kelas', 'jurusan', 'created_at'];
+$sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 'nama_lengkap';
 
 // Base query for count
 $count_sql = "SELECT COUNT(*) as total FROM siswa WHERE 1=1";
@@ -70,8 +70,8 @@ if ($jenis_filter !== '' && in_array($jenis_filter, ['smk', 'mahasiswa'], true))
 }
 
 if ($search) {
-    $sql .= " AND (nama_lengkap LIKE :search OR nis LIKE :search OR email LIKE :search OR no_hp LIKE :search)";
-    $count_sql .= " AND (nama_lengkap LIKE :search OR nis LIKE :search OR email LIKE :search OR no_hp LIKE :search)";
+    $sql .= " AND (nama_lengkap LIKE :search OR no_hp LIKE :search)";
+    $count_sql .= " AND (nama_lengkap LIKE :search OR no_hp LIKE :search)";
     $params['search'] = "%$search%";
 }
 
@@ -122,7 +122,8 @@ function buildSortUrl($column)
 {
     $params = $_GET;
     $params['sort'] = $column;
-    $params['order'] = isset($_GET['sort']) && $_GET['sort'] === $column && $_GET['order'] === 'ASC' ? 'DESC' : 'ASC';
+    $order = $_GET['order'] ?? '';
+    $params['order'] = (isset($_GET['sort']) && $_GET['sort'] === $column && $order === 'ASC') ? 'DESC' : 'ASC';
     return '?' . http_build_query($params);
 }
 
@@ -342,23 +343,9 @@ if (isset($_GET['delete']) && $_GET['delete'] == 'success') {
                     </div>
                 <?php endif; ?>
 
-                <!-- Stats Grid - Made responsive -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+                <!-- Ringkasan total dan kartu sekolah -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                     <?php
-                    $class_colors = [
-                        '10' => ['bg' => 'bg-blue-500/10', 'text' => 'text-blue-600', 'border' => 'border-blue-500/30', 'icon' => 'fa-user-graduate'],
-                        '11' => ['bg' => 'bg-green-500/10', 'text' => 'text-green-500', 'border' => 'border-green-500/30', 'icon' => 'fa-user-tie'],
-                        '12' => ['bg' => 'bg-orange-500/10', 'text' => 'text-orange-500', 'border' => 'border-orange-500/30', 'icon' => 'fa-user-tag']
-                    ];
-
-                    $major_icons = [
-                        'RPL' => 'fa-laptop-code',
-                        'DKV' => 'fa-paint-brush',
-                        'AK' => 'fa-calculator',
-                        'BR' => 'fa-shopping-bag',
-                        'MP' => 'fa-briefcase'
-                    ];
-
                     $total_students = 0;
                     foreach ($stats as $stat) {
                         $total_students += $stat['count'];
@@ -367,7 +354,7 @@ if (isset($_GET['delete']) && $_GET['delete'] == 'success') {
 
                     <!-- Total Students -->
                     <div class="glass-effect rounded-lg p-4 flex items-center">
-                        <div class="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center mr-3">
+                        <div class="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
                             <i class="fas fa-users text-blue-600"></i>
                         </div>
                         <div>
@@ -376,73 +363,49 @@ if (isset($_GET['delete']) && $_GET['delete'] == 'success') {
                         </div>
                     </div>
 
-                    <?php foreach ($stats as $stat): ?>
-                        <?php
-                        $colors = $class_colors[$stat['kelas']] ?? [
-                            'bg' => 'bg-gray-100',
-                            'text' => 'text-gray-500',
-                            'border' => 'border-gray-300',
-                            'icon' => 'fa-user'
-                        ];
-                        $icon = $major_icons[$stat['jurusan']] ?? 'fa-user';
-                        ?>
-                        <div class="glass-effect rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                            onclick="window.location='index.php?kelas=<?= htmlspecialchars($stat['kelas']) ?>&jurusan=<?= urlencode($stat['jurusan']) ?>'">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <p class="text-xs text-gray-700">Kelas <?= htmlspecialchars($stat['kelas']) ?> <?= htmlspecialchars($stat['jurusan']) ?></p>
-                                    <p class="text-xl font-bold mt-1"><?= $stat['count'] ?></p>
+                    <?php foreach ($sekolah_tampil as $s): ?>
+                        <?php $sekolah_aktif = $sekolah_filter !== '' && $sekolah_filter === $s['sekolah']; ?>
+                        <a href="index.php?sekolah_pilihan=<?= urlencode($s['sekolah']) ?>"
+                            class="glass-effect rounded-lg p-4 hover:border-blue-500 transition-colors <?= $sekolah_aktif ? 'border-blue-500 ring-1 ring-blue-500' : '' ?>">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <p class="text-xs text-gray-700 truncate" title="<?= htmlspecialchars($s['sekolah']) ?>"><?= htmlspecialchars($s['sekolah']) ?></p>
+                                    <p class="text-xl font-bold mt-1"><?= (int)$s['total'] ?> <span class="text-xs font-normal text-gray-500">siswa</span></p>
                                 </div>
-                                <div class="h-10 w-10 rounded-lg <?= $colors['bg'] ?> flex items-center justify-center">
-                                    <i class="fas <?= $icon ?> <?= $colors['text'] ?>"></i>
-                                </div>
+                                <span class="h-10 w-10 shrink-0 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                    <i class="fas fa-school"></i>
+                                </span>
                             </div>
-                        </div>
+                        </a>
                     <?php endforeach; ?>
+
+                    <?php if (!$lihat_semua_sekolah && count($sekolah_cards) > 3): ?>
+                        <a href="index.php?lihat_semua_sekolah=1"
+                            class="glass-effect rounded-lg p-4 flex items-center gap-3 hover:border-blue-500 transition-colors">
+                            <span class="h-10 w-10 shrink-0 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <i class="fas fa-layer-group"></i>
+                            </span>
+                            <span class="min-w-0">
+                                <span class="block text-sm font-medium">Lihat semua sekolah</span>
+                                <span class="block text-xs text-gray-500">Total <?= count($sekolah_cards) ?> sekolah</span>
+                            </span>
+                        </a>
+                    <?php elseif ($lihat_semua_sekolah): ?>
+                        <a href="index.php"
+                            class="glass-effect rounded-lg p-4 flex items-center gap-3 hover:border-blue-500 transition-colors">
+                            <span class="h-10 w-10 shrink-0 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <i class="fas fa-times"></i>
+                            </span>
+                            <span class="block text-sm font-medium">Tutup daftar sekolah</span>
+                        </a>
+                    <?php endif; ?>
                 </div>
-
-                <!-- Kartu Sekolah -->
-                <?php if (!empty($sekolah_cards)): ?>
-                    <div class="mb-6">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="font-medium text-lg">Sekolah</h3>
-                            <?php if ($lihat_semua_sekolah): ?>
-                                <a href="index.php" class="text-sm text-blue-600 hover:text-blue-700">Tutup</a>
-                            <?php endif; ?>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <?php foreach ($sekolah_tampil as $s): ?>
-                                <a href="index.php?sekolah=<?= urlencode($s['sekolah']) ?>"
-                                   class="glass-effect rounded-xl p-4 flex items-center gap-3 hover:border-blue-500 transition-colors">
-                                    <span class="shrink-0 w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                        <i class="fas fa-users"></i>
-                                    </span>
-                                    <span class="min-w-0">
-                                        <span class="block text-sm font-semibold truncate"><?= htmlspecialchars($s['sekolah']) ?></span>
-                                        <span class="block text-xs text-gray-500 mt-0.5"><?= (int)$s['total'] ?> siswa PKL</span>
-                                    </span>
-                                </a>
-                            <?php endforeach; ?>
-
-                            <?php if (!$lihat_semua_sekolah && count($sekolah_cards) > 3): ?>
-                                <a href="index.php?lihat_semua_sekolah=1"
-                                   class="glass-effect rounded-xl p-4 flex flex-col items-center justify-center text-center min-h-[76px] hover:border-blue-500 transition-colors">
-                                    <span class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                        <i class="fas fa-layer-group"></i>
-                                    </span>
-                                    <span class="mt-2 text-sm font-medium">Lihat semua sekolah</span>
-                                    <span class="text-xs text-gray-500 mt-0.5">Total <?= count($sekolah_cards) ?> sekolah</span>
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
 
                 <!-- Filter & Search - Made responsive -->
                 <div class="glass-effect rounded-xl p-4 md:p-6 mb-6">
                     <div class="flex flex-wrap justify-between items-center mb-4">
                         <h3 class="font-medium text-lg mb-2 md:mb-0">Filter & Pencarian</h3>
-                        <?php if (!empty($_GET) && isset($_GET['search']) || isset($_GET['kelas']) || isset($_GET['sekolah']) || isset($_GET['jurusan']) || isset($_GET['jenis'])): ?>
+                        <?php if (isset($_GET['search']) || isset($_GET['kelas']) || isset($_GET['sekolah_pilihan']) || isset($_GET['sekolah_custom']) || isset($_GET['jurusan']) || isset($_GET['jenis'])): ?>
                             <a href="index.php" class="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-600">
                                 <i class="fas fa-times-circle"></i> Reset Filter
                             </a>

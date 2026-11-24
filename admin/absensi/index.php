@@ -55,7 +55,7 @@ $count_sql = "SELECT COUNT(*) as total FROM absensi a
 
 // Base query for data
 $sql = "SELECT a.id, a.tanggal, a.jam_masuk, a.status, a.approval_status, 
-        s.nama_lengkap, s.nis, s.kelas, s.jurusan, s.foto_profil 
+        s.nama_lengkap, s.no_hp, s.kelas, s.jurusan, s.foto_profil
         FROM absensi a
         JOIN siswa s ON a.siswa_id = s.id 
         WHERE 1=1";
@@ -105,8 +105,8 @@ if ($approval_filter) {
 }
 
 if ($search) {
-    $sql .= " AND (s.nama_lengkap LIKE :search OR s.nis LIKE :search)";
-    $count_sql .= " AND (s.nama_lengkap LIKE :search OR s.nis LIKE :search)";
+    $sql .= " AND (s.nama_lengkap LIKE :search OR s.no_hp LIKE :search)";
+    $count_sql .= " AND (s.nama_lengkap LIKE :search OR s.no_hp LIKE :search)";
     $params['search'] = "%$search%";
 }
 
@@ -115,11 +115,11 @@ $sort_column = $_GET['sort'] ?? 'tanggal';
 $sort_order = $_GET['order'] ?? 'DESC';
 
 // Validate sort column to prevent SQL injection
-$valid_columns = ['nis', 'nama_lengkap', 'kelas', 'tanggal', 'jam_masuk', 'status', 'approval_status'];
+$valid_columns = ['no_hp', 'nama_lengkap', 'kelas', 'tanggal', 'jam_masuk', 'status', 'approval_status'];
 $sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 'tanggal';
 
 // Add sorting prefix for joined tables
-$sort_prefix = ($sort_column == 'nama_lengkap' || $sort_column == 'nis' || $sort_column == 'kelas') ? 's.' : 'a.';
+$sort_prefix = ($sort_column == 'nama_lengkap' || $sort_column == 'no_hp' || $sort_column == 'kelas') ? 's.' : 'a.';
 
 // Add ORDER BY clause
 $sql .= " ORDER BY " . $sort_prefix . "$sort_column " . ($sort_order === 'ASC' ? 'ASC' : 'DESC');
@@ -193,7 +193,8 @@ function buildSortUrl($column)
 {
     $params = $_GET;
     $params['sort'] = $column;
-    $params['order'] = isset($_GET['sort']) && $_GET['sort'] === $column && $_GET['order'] === 'ASC' ? 'DESC' : 'ASC';
+    $order = $_GET['order'] ?? '';
+    $params['order'] = (isset($_GET['sort']) && $_GET['sort'] === $column && $order === 'ASC') ? 'DESC' : 'ASC';
     return '?' . http_build_query($params);
 }
 
@@ -514,7 +515,7 @@ if (isset($_GET['delete']) && $_GET['delete'] == 'success') {
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <?php foreach ($sekolah_tampil as $s): ?>
-                                <a href="index.php?sekolah=<?= urlencode($s['sekolah']) ?>&date=<?= $date_filter ?>"
+                                <a href="index.php?sekolah_pilihan=<?= urlencode($s['sekolah']) ?>&date=<?= $date_filter ?>"
                                    class="glass-effect rounded-xl p-4 hover:border-blue-500 transition-colors">
                                     <div class="flex items-start justify-between gap-2">
                                         <p class="font-semibold leading-snug break-words"><?= htmlspecialchars($s['sekolah']) ?></p>
@@ -550,7 +551,7 @@ if (isset($_GET['delete']) && $_GET['delete'] == 'success') {
                 <div class="glass-effect rounded-xl p-4 md:p-6 mb-6">
                     <div class="flex flex-wrap justify-between items-center mb-4">
                         <h3 class="font-medium text-lg mb-2 md:mb-0">Filter & Pencarian</h3>
-                        <?php if (!empty($_GET) && isset($_GET['search']) || isset($_GET['date']) || isset($_GET['status']) || isset($_GET['kelas']) || isset($_GET['jurusan']) || isset($_GET['sekolah']) || isset($_GET['approval'])): ?>
+                        <?php if (isset($_GET['search']) || isset($_GET['date']) || isset($_GET['status']) || isset($_GET['kelas']) || isset($_GET['jurusan']) || isset($_GET['sekolah_pilihan']) || isset($_GET['sekolah_custom']) || isset($_GET['approval'])): ?>
                             <a href="index.php" class="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-600">
                                 <i class="fas fa-times-circle"></i> Reset Filter
                             </a>
@@ -670,7 +671,7 @@ if (isset($_GET['delete']) && $_GET['delete'] == 'success') {
                                 <label class="text-xs text-gray-700 block mb-1">Pencarian Siswa</label>
                                 <div class="relative">
                                     <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
-                                        placeholder="Nama atau NIS..."
+                                        placeholder="Nama atau No HP..."
                                         class="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-9 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
                                     <?php if ($search): ?>
@@ -698,9 +699,9 @@ if (isset($_GET['delete']) && $_GET['delete'] == 'success') {
                                 <thead>
                                     <tr class="bg-gray-50 text-gray-700 text-left">
                                         <th class="px-6 py-3 text-xs font-medium">
-                                            <a href="<?= buildSortUrl('nis') ?>" class="flex items-center gap-1 hover:text-gray-900">
-                                                NIS
-                                                <?php echo getSortIcon('nis', $sort_column, $sort_order); ?>
+                                            <a href="<?= buildSortUrl('no_hp') ?>" class="flex items-center gap-1 hover:text-gray-900">
+                                                No HP
+                                                <?php echo getSortIcon('no_hp', $sort_column, $sort_order); ?>
                                             </a>
                                         </th>
                                         <th class="px-6 py-3 text-xs font-medium">
@@ -746,7 +747,7 @@ if (isset($_GET['delete']) && $_GET['delete'] == 'success') {
                                     <?php foreach ($absensi_list as $absensi): ?>
                                         <tr class="hover:bg-blue-50 transition-colors animate-fade-in">
                                             <td class="px-6 py-4">
-                                                <?= htmlspecialchars($absensi['nis'] ?? '') ?>
+                                                <?= htmlspecialchars($absensi['no_hp'] ?? '-') ?>
                                             </td>
                                             <td class="px-6 py-4">
                                                 <div class="flex items-center">

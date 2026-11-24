@@ -259,7 +259,7 @@ $status_colors = [
 
                             <!-- Student info with responsive spacing -->
                             <h3 class="text-lg sm:text-xl font-bold mt-3 sm:mt-4"><?= htmlspecialchars($siswa['nama_lengkap']) ?></h3>
-                            <p class="text-sm text-gray-700 mb-1"><?= htmlspecialchars($siswa['nis'] ?? '') ?><?= $siswa['sekolah'] ? ' • ' . htmlspecialchars($siswa['sekolah']) : '' ?> • Kelas <?= htmlspecialchars($siswa['kelas']) ?> • <?= htmlspecialchars(jurusan_label($siswa['jurusan'])) ?></p>
+                            <p class="text-sm text-gray-700 mb-1"><?= $siswa['sekolah'] ? htmlspecialchars($siswa['sekolah']) . ' • ' : '' ?>Kelas <?= htmlspecialchars($siswa['kelas']) ?> • <?= htmlspecialchars(jurusan_label($siswa['jurusan'])) ?></p>
                             <p class="text-xs text-gray-500 mb-3 sm:mb-4">
                                 <?= ($siswa['jenis'] ?? 'smk') === 'mahasiswa' ? 'Mahasiswa' : 'SMK' ?><?php if (!empty($siswa['jenis_kelamin'])): ?> • <?= $siswa['jenis_kelamin'] === 'L' ? 'Laki-laki' : 'Perempuan' ?><?php endif; ?>
                             </p>
@@ -267,19 +267,13 @@ $status_colors = [
                             <!-- Contact info -->
                             <div class="space-y-2 sm:space-y-3">
                                 <div class="flex items-center gap-3">
-                                    <i class="fas fa-envelope w-5 text-center text-blue-600"></i>
-                                    <span class="text-sm break-all"><?= htmlspecialchars($siswa['email'] ?? '') ?></span>
+                                    <i class="fas fa-phone w-5 text-center text-blue-600"></i>
+                                    <span class="text-sm break-all"><?= !empty($siswa['no_hp']) ? htmlspecialchars($siswa['no_hp']) : '-' ?></span>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <i class="fas fa-clock w-5 text-center text-blue-600"></i>
                                     <span class="text-sm">Terdaftar: <?= date('d/m/Y', strtotime($siswa['created_at'])) ?></span>
                                 </div>
-                                <?php if (!empty($siswa['no_hp'])): ?>
-                                    <div class="flex items-center gap-3">
-                                        <i class="fas fa-phone w-5 text-center text-blue-600"></i>
-                                        <span class="text-sm break-all"><?= htmlspecialchars($siswa['no_hp']) ?></span>
-                                    </div>
-                                <?php endif; ?>
                                 <?php if (!empty($siswa['pkl_mulai']) || !empty($siswa['pkl_selesai'])): ?>
                                     <div class="flex items-center gap-3">
                                         <i class="fas fa-calendar-alt w-5 text-center text-blue-600"></i>
@@ -301,7 +295,7 @@ $status_colors = [
                             </div>
 
                             <!-- View all attendances link -->
-                            <a href="../absensi/?search=<?= urlencode($siswa['nis'] ?? '') ?>"
+                            <a href="../absensi/?search=<?= urlencode($siswa['no_hp'] ?? '') ?>"
                                 class="block mt-3 bg-gray-50 hover:bg-gray-100 text-center py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors touch-effect">
                                 <i class="fas fa-history mr-2"></i>Lihat Semua Riwayat Absensi
                             </a>

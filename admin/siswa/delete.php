@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
         $conn->beginTransaction();
 
         // Get student details for activity log
-        $sql = "SELECT nama_lengkap, nis FROM siswa WHERE id = :id";
+        $sql = "SELECT nama_lengkap, no_hp FROM siswa WHERE id = :id";
         $stmt = $conn->prepare($sql);
         $stmt->execute(['id' => $id]);
         $siswa = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -32,7 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
             $stmt->execute(['id' => $id]);
 
             // Log activity
-            $description = "Admin menghapus data siswa: " . $siswa['nama_lengkap'] . " (" . $siswa['nis'] ?? '' . ")";
+            $description = "Admin menghapus data siswa: " . $siswa['nama_lengkap'];
+            if (!empty($siswa['no_hp'])) {
+                $description .= " (" . $siswa['no_hp'] . ")";
+            }
 
             $sql = "INSERT INTO activity_log (user_type, user_id, activity_type, description) 
                     VALUES ('admin', :admin_id, 'delete', :description)";

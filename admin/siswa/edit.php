@@ -32,7 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Get form data
         $nama_lengkap = $_POST['nama_lengkap'];
-        $kelas = trim($_POST['kelas'] ?? '');
+        $kelas_pilihan = $_POST['kelas_pilihan'] ?? '';
+        $kelas = ($kelas_pilihan === 'lainnya') ? trim($_POST['kelas_custom'] ?? '') : trim($kelas_pilihan);
         $sekolah = trim($_POST['sekolah'] ?? '');
         $jurusan = trim($_POST['jurusan'] ?? '');
         $jenis = $_POST['jenis'] ?? 'smk';
@@ -93,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $file_extension = pathinfo($_FILES['foto_profil']['name'], PATHINFO_EXTENSION);
-            $filename = 'profile_' . $nis . '_' . time() . '.' . $file_extension;
+            $filename = 'profile_' . $id . '_' . time() . '.' . $file_extension;
             $target_file = $upload_dir . $filename;
 
             if (move_uploaded_file($_FILES['foto_profil']['tmp_name'], $target_file)) {
@@ -145,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare($sql);
         $stmt->execute([
             'admin_id' => $_SESSION['admin_id'],
-            'description' => "Admin mengedit data siswa: $nama_lengkap ($nis)"
+            'description' => "Admin mengedit data siswa: $nama_lengkap"
         ]);
 
         $conn->commit();
@@ -269,16 +270,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flex-direction: column;
             gap: 2px;
             padding: 0.75rem 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.10);
+            border: 1px solid #E5E7EB;
             border-radius: 0.75rem;
-            background: rgba(255, 255, 255, 0.03);
+            background: #F9FAFB;
             cursor: pointer;
-            transition: border-color 0.15s ease, background 0.15s ease;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
             min-height: 44px;
         }
 
         .pick-card:hover {
-            border-color: rgba(46, 119, 188, 0.35);
+            border-color: rgba(46, 119, 188, 0.45);
+            background: #F3F7FC;
         }
 
         .pick-card:has(input:checked) {
@@ -295,17 +297,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .pick-title {
             font-weight: 600;
-            color: #fff;
+            color: #111827;
         }
 
         .pick-sub {
             font-size: 0.75rem;
-            color: #9ca3af;
+            color: #6B7280;
         }
 
         .pick-inline {
             flex-direction: row;
             align-items: center;
+            gap: 0.5rem;
         }
     </style>
 </head>
@@ -429,18 +432,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <!-- Mode pendaftar -->
-                        <?php $currentJenis = $siswa['jenis'] ?? 'smk'; ?>
+                        <?php
+                        $currentJenis = $siswa['jenis'] ?? 'smk';
+
+                        $kelas_smk = kelas_options($conn, 'smk');
+                        $kelas_mahasiswa = kelas_options($conn, 'mahasiswa');
+                        $kelas_sekarang = trim($siswa['kelas']);
+                        $kelas_terpilih = '';
+                        foreach (array_merge($kelas_smk, $kelas_mahasiswa) as $option) {
+                            if (strcasecmp($option, $kelas_sekarang) === 0) {
+                                $kelas_terpilih = $option;
+                                break;
+                            }
+                        }
+                        $kelas_custom = $kelas_terpilih === '' ? $kelas_sekarang : '';
+                        ?>
                         <div class="mb-6">
                             <span class="block text-sm text-gray-700 mb-2">Jenis Pendaftar</span>
                             <div class="grid grid-cols-2 gap-3">
                                 <label class="pick-card">
                                     <input type="radio" name="jenis" value="smk" <?= $currentJenis === 'smk' ? 'checked' : '' ?>>
-                                    <span class="pick-title">SMK</span>
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-school text-blue-600"></i>
+                                        <span class="pick-title">SMK</span>
+                                    </span>
                                     <span class="pick-sub">Siswa sekolah</span>
                                 </label>
                                 <label class="pick-card">
                                     <input type="radio" name="jenis" value="mahasiswa" <?= $currentJenis === 'mahasiswa' ? 'checked' : '' ?>>
-                                    <span class="pick-title">Mahasiswa</span>
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-university text-blue-600"></i>
+                                        <span class="pick-title">Mahasiswa</span>
+                                    </span>
                                     <span class="pick-sub">Peserta magang / PKL</span>
                                 </label>
                             </div>
@@ -457,15 +480,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             <!-- Kelas -->
                             <div class="mb-2 md:mb-0">
-                                <label for="kelas" id="label-kelas" class="block text-sm text-gray-700 mb-2">Kelas</label>
-                                <input type="text" id="kelas" name="kelas" list="kelas-options" required maxlength="30" autocomplete="off"
-                                    value="<?= htmlspecialchars($siswa['kelas']) ?>" placeholder="Contoh: XI RPL 1"
+                                <label for="kelas_pilihan" id="label-kelas" class="block text-sm text-gray-700 mb-2">Kelas</label>
+                                <select id="kelas_pilihan" name="kelas_pilihan"
                                     class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
-                                <datalist id="kelas-options">
-                                    <?php foreach (array_merge(kelas_options($conn, 'smk'), kelas_options($conn, 'mahasiswa')) as $option): ?>
-                                        <option value="<?= htmlspecialchars($option) ?>"></option>
-                                    <?php endforeach; ?>
-                                </datalist>
+                                    <option value="">Pilih kelas</option>
+                                    <?php if (!empty($kelas_smk)): ?>
+                                        <optgroup label="SMK">
+                                            <?php foreach ($kelas_smk as $option): ?>
+                                                <option value="<?= htmlspecialchars($option) ?>" <?= $kelas_terpilih === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                    <?php if (!empty($kelas_mahasiswa)): ?>
+                                        <optgroup label="Mahasiswa">
+                                            <?php foreach ($kelas_mahasiswa as $option): ?>
+                                                <option value="<?= htmlspecialchars($option) ?>" <?= $kelas_terpilih === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                    <option value="lainnya" <?= $kelas_custom !== '' ? 'selected' : '' ?>>Lainnya...</option>
+                                </select>
+                                <input type="text" id="kelas_custom" name="kelas_custom" maxlength="30" autocomplete="off"
+                                    value="<?= htmlspecialchars($kelas_custom) ?>" placeholder="Ketik kelas / semester"
+                                    class="w-full mt-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target <?= $kelas_custom === '' ? 'hidden' : '' ?>">
                             </div>
 
                             <!-- Nama Sekolah -->
@@ -487,10 +524,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="grid grid-cols-2 gap-3">
                                     <label class="pick-card pick-inline">
                                         <input type="radio" name="jenis_kelamin" value="L" <?= ($siswa['jenis_kelamin'] ?? '') === 'L' ? 'checked' : '' ?>>
+                                        <i class="fas fa-mars text-blue-600"></i>
                                         <span class="pick-title">Laki-laki</span>
                                     </label>
                                     <label class="pick-card pick-inline">
                                         <input type="radio" name="jenis_kelamin" value="P" <?= ($siswa['jenis_kelamin'] ?? '') === 'P' ? 'checked' : '' ?>>
+                                        <i class="fas fa-venus text-blue-600"></i>
                                         <span class="pick-title">Perempuan</span>
                                     </label>
                                 </div>
@@ -508,6 +547,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="password" class="block text-sm text-gray-700 mb-2">Password</label>
                                 <div class="relative">
                                     <input type="password" id="password" name="password" placeholder="Biarkan kosong jika tidak diubah"
+                                        autocomplete="new-password" spellcheck="false"
                                         class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 pr-10 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
                                     <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 w-8 h-8 flex items-center justify-center">
                                         <i class="fas fa-eye" id="password-toggle-icon"></i>
@@ -630,19 +670,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const labelKelas = document.getElementById('label-kelas');
         const labelPkl = document.getElementById('label-pkl');
         const labelJurusan = document.getElementById('label-jurusan');
-        const kelasInput = document.getElementById('kelas');
         const modeRadios = document.querySelectorAll('input[name="jenis"]');
 
         function applyMode(jenis) {
             const mahasiswa = jenis === 'mahasiswa';
             labelKelas.textContent = mahasiswa ? 'Kelas / Semester' : 'Kelas';
-            kelasInput.placeholder = mahasiswa ? 'Contoh: Semester 3' : 'Contoh: XI RPL 1';
             labelPkl.textContent = mahasiswa ? 'Durasi Magang / PKL' : 'Durasi PKL';
             labelJurusan.textContent = mahasiswa ? 'Program Studi' : 'Jurusan';
         }
 
         modeRadios.forEach(radio => radio.addEventListener('change', () => applyMode(radio.value)));
         applyMode(document.querySelector('input[name="jenis"]:checked')?.value || 'smk');
+
+        // Kelas: input manual hanya muncul kalau pilih "Lainnya"
+        const kelasSelect = document.getElementById('kelas_pilihan');
+        const kelasCustom = document.getElementById('kelas_custom');
+
+        function syncKelas() {
+            const lainnya = kelasSelect.value === 'lainnya';
+            kelasCustom.classList.toggle('hidden', !lainnya);
+        }
+
+        kelasSelect.addEventListener('change', function () {
+            syncKelas();
+            if (kelasSelect.value === 'lainnya') kelasCustom.focus();
+        });
+        syncKelas();
 
         // Jurusan card selection feeds the hidden field
         const jurusanRadios = document.querySelectorAll('input[name="jurusan_pilihan"]');

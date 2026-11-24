@@ -40,7 +40,7 @@ Tema antarmuka memakai palet biru `#2E77BC`, emas, dan navy `#1F2A44` dengan lat
 1. Clone repository ini:
 
    ```bash
-   git clone https://github.com/FatahSahaja/AbsensiPKL.git
+   git clone https://github.com/DiGitdaw/AbsensiPKL.git
    cd AbsensiPKL
    ```
 

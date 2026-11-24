@@ -125,9 +125,12 @@ function set_pengaturan($conn, $kunci, $nilai)
     ]);
 }
 
-// Saran kelas: daftar umum per jenis, ditambah nilai yang sudah dipakai
+// Saran kelas: dipisah per jenis, digabung dengan nilai yang sudah dipakai.
+// Perbandingan tanpa peduli huruf besar supaya "SEMESTER 5" dan "Semester 5" tidak dobel.
 function kelas_options($conn, $jenis = 'smk')
 {
+    $jenis = $jenis === 'mahasiswa' ? 'mahasiswa' : 'smk';
+
     $base = $jenis === 'mahasiswa'
         ? ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6']
         : ['X', 'XI', 'XII'];
@@ -135,14 +138,34 @@ function kelas_options($conn, $jenis = 'smk')
     $used = [];
 
     try {
-        $stmt = $conn->query("SELECT DISTINCT kelas FROM siswa WHERE kelas IS NOT NULL AND kelas <> ''");
+        $stmt = $conn->query("SELECT DISTINCT kelas FROM siswa WHERE kelas IS NOT NULL AND kelas <> '' ORDER BY kelas");
         $used = $stmt->fetchAll(PDO::FETCH_COLUMN);
     } catch (PDOException $e) {
         $used = [];
     }
 
-    $options = array_values(array_unique(array_merge($base, $used)));
-    sort($options, SORT_NATURAL);
+    $options = [];
+    $seen = [];
+
+    foreach (array_merge($base, $used) as $kelas) {
+        $kelas = trim($kelas);
+        if ($kelas === '') {
+            continue;
+        }
+
+        $semester = stripos($kelas, 'semester') === 0;
+        if (($jenis === 'mahasiswa') !== $semester) {
+            continue;
+        }
+
+        $key = strtolower($kelas);
+        if (isset($seen[$key])) {
+            continue;
+        }
+
+        $seen[$key] = true;
+        $options[] = $kelas;
+    }
 
     return $options;
 }

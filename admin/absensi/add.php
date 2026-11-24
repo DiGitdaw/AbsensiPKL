@@ -10,7 +10,7 @@ $error = '';
 $success = false;
 
 // Get all students for the dropdown
-$sql = "SELECT id, nama_lengkap, nis, kelas, jurusan FROM siswa ORDER BY nama_lengkap";
+$sql = "SELECT id, nama_lengkap, no_hp, kelas, jurusan FROM siswa ORDER BY nama_lengkap";
 $siswa_list = $conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
 // Process form submission
@@ -280,7 +280,7 @@ $default_jam = date('H:i');
                                 <?php foreach ($siswa_list as $siswa): ?>
                                     <option value="<?= $siswa['id'] ?>">
                                         <?= htmlspecialchars($siswa['nama_lengkap']) ?> -
-                                        <?= htmlspecialchars($siswa['nis'] ?? '') ?> -
+                                        <?= htmlspecialchars($siswa['no_hp'] ?? '') !== '' ? htmlspecialchars($siswa['no_hp']) : '-' ?> -
                                         (<?= htmlspecialchars($siswa['kelas']) ?> <?= htmlspecialchars(jurusan_label($siswa['jurusan'])) ?>)
                                     </option>
                                 <?php endforeach; ?>
