@@ -15,52 +15,75 @@ $default_pkl_selesai = get_pengaturan($conn, 'pkl_selesai', '');
 // Isian terakhir supaya tidak perlu mengetik ulang sekolah/kelas/jurusan
 $last_input = $_SESSION['last_input_siswa'] ?? [];
 
-$kelas_pilihan = $_POST['kelas_pilihan'] ?? '';
-$val_kelas = ($kelas_pilihan === 'lainnya') ? trim($_POST['kelas_custom'] ?? '') : trim($kelas_pilihan);
-if ($val_kelas === '') {
-    $val_kelas = $last_input['kelas'] ?? '';
+// Pilihan tingkat kelas: SMK cukup X/XI/XII, sisanya diketik manual.
+$tingkat_smk = ['X', 'XI', 'XII'];
+$tingkat_mahasiswa = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6'];
+
+$sekolah_list = sekolah_options($conn);
+$jurusan_list = jurusan_options($conn);
+
+$jenis_tampil = $_POST['jenis'] ?? ($last_input['jenis'] ?? 'smk');
+if (!in_array($jenis_tampil, ['smk', 'mahasiswa'], true)) {
+    $jenis_tampil = 'smk';
+}
+
+function rapikan_tingkat($tingkat)
+{
+    $tingkat = trim($tingkat);
+    if (preg_match('/^Semester\s+(\d+)$/i', $tingkat, $m)) {
+        return 'Semester ' . (int)$m[1];
+    }
+    return strtoupper($tingkat);
+}
+
+$val_kelas_tingkat = rapikan_tingkat($_POST['kelas_tingkat'] ?? '');
+$val_kelas_suffix = strtoupper(trim($_POST['kelas_suffix'] ?? ''));
+
+// Kalau belum ada isian, ambil dari tambahan terakhir lalu pisah tingkat + sisanya.
+if ($val_kelas_tingkat === '' && $val_kelas_suffix === '') {
+    $last_kelas = trim($last_input['kelas'] ?? '');
+    if ($last_kelas !== '') {
+        if (preg_match('/^(XII|XI|X)\b\s*(.*)$/i', $last_kelas, $m)) {
+            $val_kelas_tingkat = strtoupper($m[1]);
+            $val_kelas_suffix = strtoupper(trim($m[2]));
+        } elseif (preg_match('/^Semester\s+(\d+)\b\s*(.*)$/i', $last_kelas, $m)) {
+            $val_kelas_tingkat = 'Semester ' . (int)$m[1];
+            $val_kelas_suffix = strtoupper(trim($m[2]));
+        } else {
+            $val_kelas_suffix = strtoupper($last_kelas);
+        }
+    }
 }
 
 $sekolah_pilihan = $_POST['sekolah_pilihan'] ?? '';
-$val_sekolah = ($sekolah_pilihan === 'lainnya') ? trim($_POST['sekolah_custom'] ?? '') : trim($sekolah_pilihan);
+$val_sekolah = ($sekolah_pilihan === 'lainnya') ? strtoupper(trim($_POST['sekolah_custom'] ?? '')) : trim($sekolah_pilihan);
 if ($val_sekolah === '') {
     $val_sekolah = $last_input['sekolah'] ?? '';
 }
 
-$val_jurusan = $_POST['jurusan'] ?? ($last_input['jurusan'] ?? '');
+$val_jurusan = strtoupper(trim($_POST['jurusan'] ?? ($last_input['jurusan'] ?? '')));
+$val_jurusan_manual_aktif = $val_jurusan !== '' && !in_array($val_jurusan, $jurusan_list, true);
 $val_pkl_mulai = $_POST['pkl_mulai'] ?? ($last_input['pkl_mulai'] ?? $default_pkl_mulai);
 $val_pkl_selesai = $_POST['pkl_selesai'] ?? ($last_input['pkl_selesai'] ?? $default_pkl_selesai);
 
-// Pilihan kelas dipisah per jenis, lalu dicocokkan tanpa peduli huruf besar
-$kelas_smk = kelas_options($conn, 'smk');
-$kelas_mahasiswa = kelas_options($conn, 'mahasiswa');
-$kelas_terpilih = '';
-foreach (array_merge($kelas_smk, $kelas_mahasiswa) as $option) {
-    if ($val_kelas !== '' && strcasecmp($option, $val_kelas) === 0) {
-        $kelas_terpilih = $option;
-        break;
-    }
-}
-$kelas_dikenal = $kelas_terpilih !== '';
-if ($kelas_terpilih !== '' && $kelas_terpilih !== $val_kelas) {
-    $val_kelas = $kelas_terpilih;
-}
+// Baris siswa untuk ditampilkan ulang kalau validasi gagal
+$jumlah_tampil = max(1, min(50, (int)($_POST['jumlah'] ?? 1)));
+$nama_tampil = $_POST['siswa_nama'] ?? [];
+$hp_tampil = $_POST['siswa_no_hp'] ?? [];
+$gender_tampil = $_POST['siswa_gender'] ?? [];
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Get form data
-        $jumlah = max(1, (int)($_POST['jumlah'] ?? 1));
-        $nama_lengkap = trim($_POST['nama_lengkap'] ?? '');
-        $nama_list = trim($_POST['nama_list'] ?? '');
-        $kelas_pilihan = $_POST['kelas_pilihan'] ?? '';
-        $kelas = ($kelas_pilihan === 'lainnya') ? trim($_POST['kelas_custom'] ?? '') : trim($kelas_pilihan);
+        $jumlah = max(1, min(50, (int)($_POST['jumlah'] ?? 1)));
+
+        $kelas_tingkat = rapikan_tingkat($_POST['kelas_tingkat'] ?? '');
+        $kelas_suffix = strtoupper(trim($_POST['kelas_suffix'] ?? ''));
         $sekolah_pilihan = $_POST['sekolah_pilihan'] ?? '';
-        $sekolah = ($sekolah_pilihan === 'lainnya') ? trim($_POST['sekolah_custom'] ?? '') : trim($sekolah_pilihan);
-        $jurusan = trim($_POST['jurusan'] ?? '');
+        $sekolah = ($sekolah_pilihan === 'lainnya') ? strtoupper(trim($_POST['sekolah_custom'] ?? '')) : trim($sekolah_pilihan);
+        $jurusan = strtoupper(trim($_POST['jurusan'] ?? ''));
         $jenis = $_POST['jenis'] ?? 'smk';
-        $jenis_kelamin = $_POST['jenis_kelamin'] ?? '';
-        $no_hp = trim($_POST['no_hp'] ?? '');
         $pkl_mulai = $_POST['pkl_mulai'] ?? '';
         $pkl_selesai = $_POST['pkl_selesai'] ?? '';
         $password = $_POST['password'] ?? '';
@@ -72,20 +95,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($jenis, ['smk', 'mahasiswa'], true)) {
             $jenis = 'smk';
         }
-        if (!in_array($jenis_kelamin, ['L', 'P', ''], true)) {
-            $jenis_kelamin = '';
+
+        $tingkat_dipakai = $jenis === 'mahasiswa' ? $tingkat_mahasiswa : $tingkat_smk;
+        if (!in_array($kelas_tingkat, $tingkat_dipakai, true)) {
+            throw new Exception("Tingkat kelas wajib dipilih.");
         }
-        if ($kelas === '' || strlen($kelas) > 30) {
-            throw new Exception("Kelas wajib diisi, maksimal 30 karakter.");
+
+        $kelas = trim($kelas_tingkat . ($kelas_suffix !== '' ? ' ' . $kelas_suffix : ''));
+        if (strlen($kelas) > 30) {
+            throw new Exception("Kelas maksimal 30 karakter.");
         }
         if (strlen($sekolah) > 100) {
             throw new Exception("Nama sekolah maksimal 100 karakter.");
         }
         if ($jurusan === '' || strlen($jurusan) > 50) {
             throw new Exception("Jurusan wajib diisi, maksimal 50 karakter.");
-        }
-        if ($no_hp !== '' && !preg_match('/^[0-9+\-\s()]{8,20}$/', $no_hp)) {
-            throw new Exception("No HP tidak valid.");
         }
         if ($pkl_mulai !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $pkl_mulai)) {
             $pkl_mulai = '';
@@ -94,17 +118,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pkl_selesai = '';
         }
 
-        $nama_array = null;
-        if ($jumlah > 1) {
-            $nama_array = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $nama_list))));
-            if (count($nama_array) === 0) {
-                throw new Exception("Daftar nama siswa belum diisi.");
+        // Nama, No HP, dan jenis kelamin diisi per baris
+        $nama_rows = $_POST['siswa_nama'] ?? [];
+        $hp_rows = $_POST['siswa_no_hp'] ?? [];
+        $gender_rows = $_POST['siswa_gender'] ?? [];
+
+        $siswa_rows = [];
+        for ($i = 0; $i < $jumlah; $i++) {
+            $nama = strtoupper(trim($nama_rows[$i] ?? ''));
+            $no_hp = trim($hp_rows[$i] ?? '');
+            $jenis_kelamin = $gender_rows[$i] ?? '';
+
+            if ($nama === '') {
+                throw new Exception("Nama siswa baris ke-" . ($i + 1) . " wajib diisi.");
             }
-            if (count($nama_array) > $jumlah) {
-                $nama_array = array_slice($nama_array, 0, $jumlah);
+            if (strlen($nama) > 100) {
+                throw new Exception("Nama siswa baris ke-" . ($i + 1) . " maksimal 100 karakter.");
             }
-        } elseif ($nama_lengkap === '') {
-            throw new Exception("Nama lengkap wajib diisi.");
+            if ($no_hp !== '' && !preg_match('/^[0-9+\-\s()]{8,20}$/', $no_hp)) {
+                throw new Exception("No HP siswa baris ke-" . ($i + 1) . " tidak valid.");
+            }
+            if (!in_array($jenis_kelamin, ['L', 'P'], true)) {
+                $jenis_kelamin = '';
+            }
+
+            $siswa_rows[] = [
+                'nama' => $nama,
+                'no_hp' => $no_hp,
+                'jenis_kelamin' => $jenis_kelamin,
+            ];
         }
 
         // Start transaction
@@ -148,39 +190,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("INSERT INTO siswa (nama_lengkap, kelas, sekolah, jurusan, jenis, jenis_kelamin, no_hp, pkl_mulai, pkl_selesai, password, foto_profil)
                                 VALUES (:nama, :kelas, :sekolah, :jurusan, :jenis, :jenis_kelamin, :no_hp, :pkl_mulai, :pkl_selesai, :password, :foto_profil)");
 
-        if ($jumlah > 1) {
-            foreach ($nama_array as $nama) {
-                $stmt->execute([
-                    'nama' => $nama,
-                    'kelas' => $kelas,
-                    'sekolah' => $sekolah !== '' ? $sekolah : null,
-                    'jurusan' => $jurusan,
-                    'jenis' => $jenis,
-                    'jenis_kelamin' => null,
-                    'no_hp' => null,
-                    'pkl_mulai' => $pkl_mulai !== '' ? $pkl_mulai : null,
-                    'pkl_selesai' => $pkl_selesai !== '' ? $pkl_selesai : null,
-                    'password' => $password_hash,
-                    'foto_profil' => 'assets/default/photo-profile.png'
-                ]);
-            }
-            $deskripsi = "Admin menambahkan " . count($nama_array) . " siswa sekolah $sekolah";
-        } else {
+        $student_id = null;
+        foreach ($siswa_rows as $row) {
             $stmt->execute([
-                'nama' => $nama_lengkap,
+                'nama' => $row['nama'],
                 'kelas' => $kelas,
                 'sekolah' => $sekolah !== '' ? $sekolah : null,
                 'jurusan' => $jurusan,
                 'jenis' => $jenis,
-                'jenis_kelamin' => $jenis_kelamin !== '' ? $jenis_kelamin : null,
-                'no_hp' => $no_hp !== '' ? $no_hp : null,
+                'jenis_kelamin' => $row['jenis_kelamin'] !== '' ? $row['jenis_kelamin'] : null,
+                'no_hp' => $row['no_hp'] !== '' ? $row['no_hp'] : null,
                 'pkl_mulai' => $pkl_mulai !== '' ? $pkl_mulai : null,
                 'pkl_selesai' => $pkl_selesai !== '' ? $pkl_selesai : null,
                 'password' => $password_hash,
-                'foto_profil' => $foto_profil
+                'foto_profil' => $jumlah === 1 ? $foto_profil : 'assets/default/photo-profile.png'
             ]);
-            $student_id = $conn->lastInsertId();
-            $deskripsi = "Admin menambahkan siswa baru: $nama_lengkap";
+
+            if ($jumlah === 1) {
+                $student_id = $conn->lastInsertId();
+            }
+        }
+
+        if ($jumlah > 1) {
+            $deskripsi = "Admin menambahkan " . count($siswa_rows) . " siswa sekolah $sekolah";
+        } else {
+            $deskripsi = "Admin menambahkan siswa baru: " . $siswa_rows[0]['nama'];
         }
 
         // Log activity
@@ -196,6 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Simpan isian terakhir
         $_SESSION['last_input_siswa'] = [
+            'jenis' => $jenis,
             'kelas' => $kelas,
             'sekolah' => $sekolah,
             'jurusan' => $jurusan,
@@ -204,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
 
         if ($jumlah > 1) {
-            header("Location: index.php?ditambahkan=" . count($nama_array));
+            header("Location: index.php?ditambahkan=" . count($siswa_rows));
             exit();
         }
 
@@ -476,7 +511,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span class="block text-sm text-gray-700 mb-2">Jenis Pendaftar</span>
                             <div class="grid grid-cols-2 gap-3">
                                 <label class="pick-card">
-                                    <input type="radio" name="jenis" value="smk" checked>
+                                    <input type="radio" name="jenis" value="smk" <?= $jenis_tampil === 'smk' ? 'checked' : '' ?>>
                                     <span class="flex items-center gap-2">
                                         <i class="fas fa-school text-blue-600"></i>
                                         <span class="pick-title">SMK</span>
@@ -484,7 +519,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <span class="pick-sub">Siswa sekolah</span>
                                 </label>
                                 <label class="pick-card">
-                                    <input type="radio" name="jenis" value="mahasiswa">
+                                    <input type="radio" name="jenis" value="mahasiswa" <?= $jenis_tampil === 'mahasiswa' ? 'checked' : '' ?>>
                                     <span class="flex items-center gap-2">
                                         <i class="fas fa-university text-blue-600"></i>
                                         <span class="pick-title">Mahasiswa</span>
@@ -497,104 +532,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <!-- Jumlah siswa -->
                         <div class="mb-4 md:mb-6">
                             <label for="jumlah" class="block text-sm text-gray-700 mb-2">Jumlah Siswa</label>
-                            <input type="number" id="jumlah" name="jumlah" min="1" max="50" value="1"
+                            <input type="number" id="jumlah" name="jumlah" min="1" max="50" value="<?= $jumlah_tampil ?>"
                                 class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
-                            <p class="text-xs text-gray-500 mt-1">Isi lebih dari 1 untuk menambah beberapa siswa sekaligus.</p>
+                            <p class="text-xs text-gray-500 mt-1">Ubah angka ini untuk menampilkan baris siswa. Nama, No HP, dan jenis kelamin diisi per siswa.</p>
                         </div>
 
-                        <!-- Form fields - Responsive grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            <!-- Nama (satu orang) -->
-                            <div class="mb-2 md:mb-0" id="single-name-wrap">
-                                <label for="nama_lengkap" class="block text-sm text-gray-700 mb-2">Nama Lengkap</label>
-                                <input type="text" id="nama_lengkap" name="nama_lengkap"
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                        <!-- Data per siswa -->
+                        <div class="mb-4 md:mb-6">
+                            <div class="flex flex-wrap items-center justify-between gap-1 mb-2">
+                                <span class="block text-sm font-medium text-gray-700">Data Siswa</span>
+                                <span class="text-xs text-gray-500">Nama, No HP, dan jenis kelamin tiap orang.</span>
                             </div>
-
-                            <!-- Nama (banyak orang) -->
-                            <div class="mb-2 md:mb-0 hidden md:col-span-2" id="multi-name-wrap">
-                                <label for="nama_list" class="block text-sm text-gray-700 mb-2">Daftar Nama (satu nama per baris)</label>
-                                <textarea id="nama_list" name="nama_list" rows="5"
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-gray-900 focus:outline-none focus:border-blue-500 touch-target"></textarea>
+                            <div id="siswa-rows" class="space-y-3">
+                                <?php for ($i = 0; $i < $jumlah_tampil; $i++): ?>
+                                    <div class="siswa-row rounded-lg border border-gray-200 bg-gray-50 p-3 md:p-4">
+                                        <p class="row-label text-xs font-semibold text-blue-700 mb-2">Siswa <?= $i + 1 ?></p>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div>
+                                                <label class="block text-xs text-gray-700 mb-1">Nama Lengkap</label>
+                                                <input type="text" name="siswa_nama[]" data-upper required maxlength="100"
+                                                    value="<?= htmlspecialchars(strtoupper($nama_tampil[$i] ?? '')) ?>"
+                                                    class="uppercase w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-700 mb-1">No HP</label>
+                                                <input type="tel" name="siswa_no_hp[]" maxlength="20" placeholder="08xxxxxxxxxx"
+                                                    value="<?= htmlspecialchars($hp_tampil[$i] ?? '') ?>"
+                                                    class="w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-700 mb-1">Jenis Kelamin</label>
+                                                <select name="siswa_gender[]"
+                                                    class="w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                                                    <option value="">-</option>
+                                                    <option value="L" <?= ($gender_tampil[$i] ?? '') === 'L' ? 'selected' : '' ?>>Laki-laki</option>
+                                                    <option value="P" <?= ($gender_tampil[$i] ?? '') === 'P' ? 'selected' : '' ?>>Perempuan</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endfor; ?>
                             </div>
+                        </div>
 
-                            <!-- Kelas -->
-                            <div class="mb-2 md:mb-0">
-                                <label for="kelas_pilihan" id="label-kelas" class="block text-sm text-gray-700 mb-2">Kelas</label>
-                                <select id="kelas_pilihan" name="kelas_pilihan"
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
-                                    <option value="">Pilih kelas</option>
-                                    <?php if (!empty($kelas_smk)): ?>
-                                        <optgroup label="SMK">
-                                            <?php foreach ($kelas_smk as $option): ?>
-                                                <option value="<?= htmlspecialchars($option) ?>" <?= $kelas_terpilih === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
+                        <!-- Data bersama untuk semua siswa -->
+                        <div class="rounded-lg border border-blue-100 bg-blue-50/40 p-3 md:p-4 mb-4 md:mb-6">
+                            <p class="text-sm font-medium text-gray-700 mb-3">Data Sekolah, Kelas, dan PKL
+                                <span class="text-xs font-normal text-gray-500">(dipakai untuk semua siswa di atas)</span>
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                <!-- Kelas: tingkat + ketikan bebas -->
+                                <div class="md:col-span-2">
+                                    <label for="kelas_tingkat" id="label-kelas" class="block text-sm text-gray-700 mb-2">Kelas</label>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <select id="kelas_tingkat" name="kelas_tingkat"
+                                            class="w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                                            <option value="">Tingkat</option>
+                                            <?php foreach (($jenis_tampil === 'mahasiswa' ? $tingkat_mahasiswa : $tingkat_smk) as $t): ?>
+                                                <option value="<?= htmlspecialchars($t) ?>" <?= $val_kelas_tingkat === $t ? 'selected' : '' ?>><?= htmlspecialchars($t) ?></option>
                                             <?php endforeach; ?>
-                                        </optgroup>
-                                    <?php endif; ?>
-                                    <?php if (!empty($kelas_mahasiswa)): ?>
-                                        <optgroup label="Mahasiswa">
-                                            <?php foreach ($kelas_mahasiswa as $option): ?>
-                                                <option value="<?= htmlspecialchars($option) ?>" <?= $kelas_terpilih === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
-                                            <?php endforeach; ?>
-                                        </optgroup>
-                                    <?php endif; ?>
-                                    <option value="lainnya" <?= ($val_kelas !== '' && !$kelas_dikenal) ? 'selected' : '' ?>>Lainnya...</option>
-                                </select>
-                                <input type="text" id="kelas_custom" name="kelas_custom" maxlength="30" placeholder="Ketik kelas"
-                                    class="hidden mt-2 w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
-                            </div>
-
-                            <!-- Nama Sekolah -->
-                            <div class="mb-2 md:mb-0">
-                                <label for="sekolah_pilihan" class="block text-sm text-gray-700 mb-2">Nama Sekolah</label>
-                                <select id="sekolah_pilihan" name="sekolah_pilihan"
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
-                                    <option value="">Pilih sekolah</option>
-                                    <?php foreach (sekolah_options($conn) as $option): ?>
-                                        <option value="<?= htmlspecialchars($option) ?>" <?= $val_sekolah === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
-                                    <?php endforeach; ?>
-                                    <option value="lainnya" <?= ($val_sekolah !== '' && !in_array($val_sekolah, sekolah_options($conn), true)) ? 'selected' : '' ?>>Lainnya...</option>
-                                </select>
-                                <input type="text" id="sekolah_custom" name="sekolah_custom" maxlength="100" placeholder="Ketik nama sekolah"
-                                    class="hidden mt-2 w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
-                            </div>
-
-                            <!-- Jenis Kelamin -->
-                            <div class="mb-2 md:mb-0">
-                                <span class="block text-sm text-gray-700 mb-2">Jenis Kelamin</span>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <label class="pick-card pick-inline">
-                                        <input type="radio" name="jenis_kelamin" value="L">
-                                        <i class="fas fa-mars text-blue-600"></i>
-                                        <span class="pick-title">Laki-laki</span>
-                                    </label>
-                                    <label class="pick-card pick-inline">
-                                        <input type="radio" name="jenis_kelamin" value="P">
-                                        <i class="fas fa-venus text-blue-600"></i>
-                                        <span class="pick-title">Perempuan</span>
-                                    </label>
+                                        </select>
+                                        <input type="text" id="kelas_suffix" name="kelas_suffix" data-upper maxlength="19"
+                                            value="<?= htmlspecialchars($val_kelas_suffix) ?>" placeholder="RPL 1"
+                                            class="uppercase col-span-2 w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Pilih tingkat, lalu ketik sisanya. Contoh: <b>XI</b> + <b>RPL 1</b> = XI RPL 1.</p>
                                 </div>
-                            </div>
 
-                            <!-- No HP -->
-                            <div class="mb-2 md:mb-0">
-                                <label for="no_hp" class="block text-sm text-gray-700 mb-2">No HP</label>
-                                <input type="tel" id="no_hp" name="no_hp" maxlength="20" placeholder="08xxxxxxxxxx"
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
-                            </div>
-
-                            <!-- Password - Improved for mobile -->
-                            <div class="mb-2 md:mb-0">
-                                <label for="password" class="block text-sm text-gray-700 mb-2">Password</label>
-                                <div class="relative">
-                                    <input type="password" id="password" name="password" required autocomplete="new-password" spellcheck="false"
-                                        placeholder="Buat password untuk siswa"
-                                        class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 pr-10 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
-                                    <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 w-8 h-8 flex items-center justify-center">
-                                        <i class="fas fa-eye" id="password-toggle-icon"></i>
-                                    </button>
+                                <!-- Nama Sekolah -->
+                                <div>
+                                    <label for="sekolah_pilihan" class="block text-sm text-gray-700 mb-2">Nama Sekolah</label>
+                                    <select id="sekolah_pilihan" name="sekolah_pilihan"
+                                        class="uppercase w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                                        <option value="">Pilih sekolah</option>
+                                        <?php foreach ($sekolah_list as $option): ?>
+                                            <option value="<?= htmlspecialchars($option) ?>" <?= $val_sekolah === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
+                                        <?php endforeach; ?>
+                                        <option value="lainnya" <?= ($val_sekolah !== '' && !in_array($val_sekolah, $sekolah_list, true)) ? 'selected' : '' ?>>Lainnya...</option>
+                                    </select>
+                                    <input type="text" id="sekolah_custom" name="sekolah_custom" data-upper maxlength="100" placeholder="Ketik nama sekolah"
+                                        value="<?= ($val_sekolah !== '' && !in_array($val_sekolah, $sekolah_list, true)) ? htmlspecialchars($val_sekolah) : '' ?>"
+                                        class="uppercase <?= ($val_sekolah !== '' && !in_array($val_sekolah, $sekolah_list, true)) ? '' : 'hidden' ?> mt-2 w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">Password dipakai saat login.</p>
+
+                                <!-- Password -->
+                                <div>
+                                    <label for="password" class="block text-sm text-gray-700 mb-2">Password</label>
+                                    <div class="relative">
+                                        <input type="password" id="password" name="password" required autocomplete="new-password" spellcheck="false"
+                                            placeholder="Buat password untuk semua siswa"
+                                            class="w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 pr-10 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 w-8 h-8 flex items-center justify-center">
+                                            <i class="fas fa-eye" id="password-toggle-icon"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Satu password untuk semua siswa di batch ini.</p>
+                                </div>
                             </div>
                         </div>
 
@@ -602,7 +635,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="mt-4 md:mt-6">
                             <span class="block text-sm text-gray-700 mb-2" id="label-jurusan">Jurusan</span>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                <?php foreach (jurusan_options($conn) as $code): ?>
+                                <?php foreach ($jurusan_list as $code): ?>
                                     <label class="pick-card">
                                         <input type="radio" name="jurusan_pilihan" value="<?= htmlspecialchars($code) ?>" <?= $val_jurusan === $code ? 'checked' : '' ?>>
                                         <span class="pick-title"><?= htmlspecialchars($code) ?></span>
@@ -611,18 +644,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <?php endif; ?>
                                     </label>
                                 <?php endforeach; ?>
-                                <?php $jurusan_known = in_array($val_jurusan, jurusan_options($conn), true); ?>
                                 <label class="pick-card">
-                                    <input type="radio" name="jurusan_pilihan" value="lainnya" <?= ($val_jurusan !== '' && !$jurusan_known) ? 'checked' : '' ?>>
+                                    <input type="radio" name="jurusan_pilihan" value="lainnya" <?= $val_jurusan_manual_aktif ? 'checked' : '' ?>>
                                     <span class="pick-title">Lainnya</span>
                                     <span class="pick-sub">Ketik jurusan manual</span>
                                 </label>
                             </div>
-                            <div id="jurusan-manual-wrap" class="mt-3 <?= ($val_jurusan !== '' && !$jurusan_known) ? '' : 'hidden' ?>">
-                                <input type="text" id="jurusan_manual" name="jurusan_manual" maxlength="50" autocomplete="off"
-                                    value="<?= ($val_jurusan !== '' && !$jurusan_known) ? htmlspecialchars($val_jurusan) : '' ?>"
-                                    placeholder="Ketik jurusan / program studi"
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                            <div id="jurusan-manual-wrap" class="mt-3 <?= $val_jurusan_manual_aktif ? '' : 'hidden' ?>">
+                                <input type="text" id="jurusan_manual" name="jurusan_manual" data-upper maxlength="50" autocomplete="off"
+                                    value="<?= $val_jurusan_manual_aktif ? htmlspecialchars($val_jurusan) : '' ?>"
+                                    placeholder="KETIK JURUSAN / PROGRAM STUDI"
+                                    class="uppercase w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
                             </div>
                             <input type="hidden" name="jurusan" id="jurusan" value="">
                             <p class="text-xs text-gray-700 mt-1">Pilih satu kartu, atau pilih Lainnya lalu ketik manual.</p>
@@ -709,63 +741,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const labelPkl = document.getElementById('label-pkl');
         const labelJurusan = document.getElementById('label-jurusan');
         const modeRadios = document.querySelectorAll('input[name="jenis"]');
+        const kelasTingkat = document.getElementById('kelas_tingkat');
+        const kelasSuffix = document.getElementById('kelas_suffix');
+
+        const tingkatSmk = ['X', 'XI', 'XII'];
+        const tingkatMahasiswa = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6'];
+
+        function rebuildTingkat(jenis) {
+            const list = jenis === 'mahasiswa' ? tingkatMahasiswa : tingkatSmk;
+            const current = kelasTingkat.value;
+            kelasTingkat.innerHTML = '<option value="">Tingkat</option>' +
+                list.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
+            kelasTingkat.value = list.indexOf(current) !== -1 ? current : '';
+        }
 
         function applyMode(jenis) {
             const mahasiswa = jenis === 'mahasiswa';
             labelKelas.textContent = mahasiswa ? 'Kelas / Semester' : 'Kelas';
             labelPkl.textContent = mahasiswa ? 'Durasi Magang / PKL' : 'Durasi PKL';
             labelJurusan.textContent = mahasiswa ? 'Program Studi' : 'Jurusan';
+            kelasSuffix.placeholder = mahasiswa ? 'TEKNIK INFORMATIKA' : 'RPL 1';
+            rebuildTingkat(jenis);
         }
 
         modeRadios.forEach(radio => radio.addEventListener('change', () => applyMode(radio.value)));
         applyMode(document.querySelector('input[name="jenis"]:checked')?.value || 'smk');
 
-        // Jumlah siswa: satu nama atau banyak nama
+        // Baris siswa: jumlah menentukan berapa baris nama/No HP/jenis kelamin
         const jumlahInput = document.getElementById('jumlah');
-        const singleNameWrap = document.getElementById('single-name-wrap');
-        const multiNameWrap = document.getElementById('multi-name-wrap');
-        const namaLengkap = document.getElementById('nama_lengkap');
+        const rowsWrap = document.getElementById('siswa-rows');
 
-        function applyJumlah() {
-            const many = parseInt(jumlahInput.value, 10) > 1;
-            singleNameWrap.classList.toggle('hidden', many);
-            multiNameWrap.classList.toggle('hidden', !many);
-            namaLengkap.required = !many;
+        function rowMarkup(index) {
+            return `
+                <div class="siswa-row rounded-lg border border-gray-200 bg-gray-50 p-3 md:p-4">
+                    <p class="row-label text-xs font-semibold text-blue-700 mb-2">Siswa ${index}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-700 mb-1">Nama Lengkap</label>
+                            <input type="text" name="siswa_nama[]" data-upper required maxlength="100"
+                                class="uppercase w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-700 mb-1">No HP</label>
+                            <input type="tel" name="siswa_no_hp[]" maxlength="20" placeholder="08xxxxxxxxxx"
+                                class="w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-700 mb-1">Jenis Kelamin</label>
+                            <select name="siswa_gender[]"
+                                class="w-full bg-white border border-gray-200 rounded-lg px-3 py-3 md:py-2 text-gray-900 focus:outline-none focus:border-blue-500 touch-target">
+                                <option value="">-</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>`;
         }
 
-        jumlahInput.addEventListener('input', applyJumlah);
-        applyJumlah();
-
-        // Pilihan dengan opsi Lainnya, terisi dari isian terakhir
-        function setupCustom(selectId, customId, prefill) {
-            const select = document.getElementById(selectId);
-            const custom = document.getElementById(customId);
-
-            function apply(focus) {
-                const lainnya = select.value === 'lainnya';
-                custom.classList.toggle('hidden', !lainnya);
-                if (lainnya && focus) custom.focus();
-            }
-
-            select.addEventListener('change', function () { apply(true); });
-
-            if (prefill && prefill !== '') {
-                const cocok = Array.from(select.options).find(function (o) {
-                    return o.value.toLowerCase() === String(prefill).toLowerCase();
-                });
-
-                if (cocok) {
-                    select.value = cocok.value;
-                } else {
-                    select.value = 'lainnya';
-                    custom.value = prefill;
-                }
-            }
-            apply(false);
+        function renumberRows() {
+            rowsWrap.querySelectorAll('.siswa-row').forEach(function (row, idx) {
+                const label = row.querySelector('.row-label');
+                if (label) label.textContent = 'Siswa ' + (idx + 1);
+            });
         }
 
-        setupCustom('kelas_pilihan', 'kelas_custom', <?= json_encode($val_kelas) ?>);
-        setupCustom('sekolah_pilihan', 'sekolah_custom', <?= json_encode($val_sekolah) ?>);
+        function syncRows() {
+            let n = parseInt(jumlahInput.value, 10);
+            if (isNaN(n)) n = 1;
+            n = Math.max(1, Math.min(50, n));
+
+            let rows = rowsWrap.querySelectorAll('.siswa-row').length;
+            while (rows < n) {
+                rowsWrap.insertAdjacentHTML('beforeend', rowMarkup(rows + 1));
+                rows++;
+            }
+            while (rows > n) {
+                rowsWrap.lastElementChild.remove();
+                rows--;
+            }
+            renumberRows();
+        }
+
+        jumlahInput.addEventListener('input', syncRows);
+        jumlahInput.addEventListener('change', function () {
+            syncRows();
+            const n = Math.max(1, Math.min(50, parseInt(jumlahInput.value, 10) || 1));
+            jumlahInput.value = n;
+        });
+        syncRows();
+
+        // Sekolah: opsi Lainnya memunculkan kolom ketik manual
+        const sekolahSelect = document.getElementById('sekolah_pilihan');
+        const sekolahCustom = document.getElementById('sekolah_custom');
+
+        function applySekolah(focus) {
+            const lainnya = sekolahSelect.value === 'lainnya';
+            sekolahCustom.classList.toggle('hidden', !lainnya);
+            if (lainnya && focus) sekolahCustom.focus();
+        }
+
+        sekolahSelect.addEventListener('change', function () { applySekolah(true); });
+        applySekolah(false);
+
+        // Semua kolom bertanda data-upper otomatis jadi huruf besar
+        document.addEventListener('input', function (e) {
+            if (!e.target.matches('input[data-upper]')) return;
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
+            e.target.value = e.target.value.toUpperCase();
+            if (start !== null && end !== null) {
+                e.target.setSelectionRange(start, end);
+            }
+        });
 
         // Jurusan card selection feeds the hidden field
         const jurusanRadios = document.querySelectorAll('input[name="jurusan_pilihan"]');
@@ -778,7 +866,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!checked) return;
             if (checked.value === 'lainnya') {
                 jurusanManualWrap.classList.remove('hidden');
-                jurusanHidden.value = jurusanManual.value.trim();
+                jurusanHidden.value = jurusanManual.value.trim().toUpperCase();
             } else {
                 jurusanManualWrap.classList.add('hidden');
                 jurusanHidden.value = checked.value;
